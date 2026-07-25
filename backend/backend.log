@@ -46,3 +46,10 @@ INFO:     127.0.0.1:60477 - "GET /api/stocks/hdfc-bank-ltd/related HTTP/1.1" 200
 INFO:     127.0.0.1:60474 - "GET /api/news/hdfc-bank-ltd HTTP/1.1" 200 OK
 INFO:     127.0.0.1:60480 - "GET /api/stocks/hdfc-bank-ltd HTTP/1.1" 200 OK
 INFO:     127.0.0.1:60479 - "GET /api/stocks/hdfc-bank-ltd/targets HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60884 - "GET /api/etfs HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60884 - "GET /api/mutual_funds?limit=100&sort_by=aum&sort_order=desc HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60884 - "OPTIONS /api/screener/stocks HTTP/1.1" 200 OK
+INFO:     127.0.0.1:60884 - "POST /api/screener/stocks HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61226 - "GET /api/stocks?client=%5Bobject+Object%5D&queryKey%5B%5D=allStocks&signal=%5Bobject+AbortSignal%5D HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61228 - "GET /api/stocks?client=%5Bobject+Object%5D&queryKey%5B%5D=allStocks&signal=%5Bobject+AbortSignal%5D HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61228 - "GET /api/search_index HTTP/1.1" 200 OK

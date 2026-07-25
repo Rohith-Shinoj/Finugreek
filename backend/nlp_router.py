@@ -41,7 +41,6 @@ INDUSTRY_SYNONYMS = {
     "pharmaceuticals": "Pharmaceuticals",
     "banks": "Banks",
     "banking": "Banks",
-    "it": "Information Technology",
     "tech": "Information Technology",
     "software": "Information Technology",
     "auto": "Auto Manufacturers",

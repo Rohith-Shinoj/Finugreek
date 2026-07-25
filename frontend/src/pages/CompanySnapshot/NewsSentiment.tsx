@@ -44,6 +44,23 @@ export const NewsSentiment = ({ data }: { data: any }) => {
     }
   };
 
+  if (isLoadingNews) {
+    return (
+      <div className="bg-surface p-5 rounded-xl border border-border h-full flex flex-col col-span-1">
+         <div className="text-sm font-semibold text-text-primary mb-4 flex items-center gap-2">
+            News Catalyst Feed
+         </div>
+         <div className="flex-1 flex items-center justify-center text-text-secondary text-xs italic opacity-50">
+           Loading news...
+         </div>
+      </div>
+    );
+  }
+
+  if (!liveFeed || liveFeed.length === 0) {
+    return null;
+  }
+
   return (
     <div className="bg-surface p-5 rounded-xl border border-border h-full flex flex-col col-span-1">
       <div className="flex justify-between items-start mb-6">
@@ -59,7 +76,11 @@ export const NewsSentiment = ({ data }: { data: any }) => {
         </div>
         <div className="text-right flex flex-col items-end">
             <p className="text-[10px] text-text-secondary uppercase font-bold tracking-wider mb-1">Aggregate Sentiment</p>
-            <p className="text-sm font-bold text-text-primary">{aggregatedNews.ewma_sentiment_all !== undefined ? aggregatedNews.ewma_sentiment_all.toFixed(2) : 'Neutral'}</p>
+            <p className="text-sm font-bold text-text-primary">
+              {liveFeed.length > 0 
+                ? (liveFeed.reduce((acc, curr) => acc + (curr.score || 0), 0) / liveFeed.length).toFixed(2) 
+                : (aggregatedNews.ewma_sentiment_all !== undefined ? aggregatedNews.ewma_sentiment_all.toFixed(2) : 'Neutral')}
+            </p>
         </div>
       </div>
 
@@ -88,9 +109,9 @@ export const NewsSentiment = ({ data }: { data: any }) => {
                     <span className={`text-[9px] px-1.5 py-0.5 rounded border font-semibold uppercase ${getTagColor(item.tag)}`}>
                       {item.tag}
                     </span>
-                    <span className={`text-[10px] px-1.5 py-0.5 rounded border font-mono ${item.score > 0 ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : item.score < 0 ? 'bg-rose-500/10 text-rose-400 border-rose-500/20' : 'bg-slate-500/10 text-slate-400 border-slate-500/20'}`}>
+                    {/* <span className={`text-[10px] px-1.5 py-0.5 rounded border font-mono ${item.score > 0 ? 'bg-emerald-500/10 text-emerald-400 border-emerald-500/20' : item.score < 0 ? 'bg-rose-500/10 text-rose-400 border-rose-500/20' : 'bg-slate-500/10 text-slate-400 border-slate-500/20'}`}>
                       {item.score > 0 ? '+' : ''}{item.score?.toFixed(2)}
-                    </span>
+                    </span> */}
                   </div>
                 </div>
                 <p className="text-sm text-text-primary leading-snug line-clamp-2" title={item.title}>

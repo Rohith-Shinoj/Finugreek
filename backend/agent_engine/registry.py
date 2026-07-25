@@ -139,9 +139,9 @@ COMPONENT_REGISTRY = {
         "schema": '{"product_disruption_risk_radar": {"threats": ["STR"], "analysis": "STR"}}',
         "required_tools": ["fetch_macro_context"]
     },
-    "sector_macro_headwinds_overview": {
+    "macro_headwinds_overview": {
         "description": "Compact text summary block evaluating macro constraints like supply chain shifts, input cost inflation, or tariffs.",
-        "schema": '{"sector_macro_headwinds_overview": {"headwinds": ["STR"], "summary": "STR"}}',
+        "schema": '{"macro_headwinds_overview": {"headwinds": ["STR"], "summary": "STR"}}',
         "required_tools": ["fetch_macro_context"]
     },
     "management_guidance_tracking_ledger": {
@@ -234,21 +234,21 @@ COMPONENT_REGISTRY = {
         "schema": '{"executive_leadership_stability_tracker": [{"role": "STR", "name": "STR", "status": "STR", "tenure_years": 0.0}]}',
         "required_tools": ["fetch_macro_context"]
     },
-    "adversarial_bear_thesis_breakdown": {
+    "risk_asymmetry": {
         "description": "Deep textual review presenting core downside risks and counter-arguments challenging the primary investment thesis.",
-        "schema": '{"adversarial_bear_thesis_breakdown": {"thesis": "STR", "key_risks": ["STR"]}}',
+        "schema": '{"risk_asymmetry": {"thesis": "STR", "key_risks": ["STR"]}}',
         "required_tools": ["fetch_macro_context"]
     },
-    "definitive_execution_roadmap": {
+    "execution_roadmap": {
         "description": "Ordered typography layout detailing exact portfolio adjustment suggestions, buy/sell rules, and final instructions.",
-        "schema": '{"definitive_execution_roadmap": {"action": "STR", "steps": ["STR"]}}',
+        "schema": '{"execution_roadmap": {"action": "STR", "steps": ["STR"]}}',
         "required_tools": ["query_quant_database", "fetch_macro_context"]
     },
     
-    # Keeping Narrative Insight for generic textual responses
-    "narrative_insight": {
+    # Category 5: Peer Metrics, Macro Stress & Portfolio Strategy
+    "executive_analysis": {
         "description": "Clean text card for generic explanations, simple conversational Q&A, and direct prose answers to general questions not covered by specific metrics.",
-        "schema": '{"narrative_insight": {"text": "STR"}}',
+        "schema": '{"executive_analysis": {"text": "STR"}}',
         "required_tools": ["fetch_macro_context", "query_quant_database"]
     }
 }

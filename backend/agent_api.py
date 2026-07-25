@@ -123,7 +123,9 @@ async def stream_agent_events(ticker: str, query: str, history: list = None):
             yield f"data: {json.dumps({'type': 'debug_log', 'log': f'[NLP] {log}'})}\n\n"
         
         BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-        DB_PATH = os.path.realpath(os.path.join(BASE_DIR, "datasets/active/market_data.parquet"))
+        DB_PATH = os.path.join(BASE_DIR, "datasets/active/market_data.parquet")
+        MF_DB_PATH = os.path.join(BASE_DIR, "datasets/active/mutual_funds.parquet")
+        ETF_DB_PATH = os.path.join(BASE_DIR, "datasets/active/etfs.parquet")
         
         if parsed.get("intent") == "QUANTITATIVE":
             # Execute DuckDB Query
@@ -205,33 +207,34 @@ async def stream_agent_events(ticker: str, query: str, history: list = None):
             
             registry_str = ""
             for key, val in COMPONENT_REGISTRY.items():
-                if key != "narrative_insight":
+                if key != "executive_analysis":
                     registry_str += f"- {key}: {val['description']}\n  Expected Schema: {val['schema']}\n\n"
 
             prompt = f"""
-            You are a Quantitative Validation Engine and Expert Institutional Portfolio Manager.
+            You are an elite Institutional Portfolio Manager and Lead Quantitative Strategist with 20 years of experience managing multi-billion dollar hedge funds. You are pathologically detail-oriented, ruthlessly analytical, and entirely unsentimental about markets. You operate STRICTLY on hard data, verifiable facts, and deterministic mathematical realities. You actively reject fluff, speculation, and unsure information. If you do not know something, or if the data is missing, you omit it rather than guess. You speak with the cold, precise, authoritative tone of a Wall Street veteran delivering an executive briefing to a room of institutional investors.
             A user asked this screening query: "{query}"
             The database was queried and returned these stocks (pre-filtered): 
             {json.dumps(output)}
             
             Your tasks:
             1. VALIDATION: Decide which stocks to KEEP or REMOVE based strictly on the query context. You can ADD highly relevant NSE/BSE stocks if they were missed by the basic database filter.
-            2. ANALYSIS & DASHBOARD GENERATION: Generate a 'narrative_insight' summary providing a massive, deep CIO macro view of the results. 
-               Additionally, choose 3 to 5 visual components from the Component Registry below that best explain the macro sector risks, alpha drivers, or thematic trends for this specific screen.
+            2. ANALYSIS: Generate an 'executive_analysis' providing a massive, deep macro view of the results, leveraging your 20 years of CIO experience.
+               CRITICAL: The 'executive_analysis.text' MUST be highly structured Markdown, utilizing bullet points, bold text, and headers to provide a comprehensive, deep analysis. Use professional headers such as '### EXECUTIVE ANALYSIS', '### RISK ASYMMETRY', and '### CATALYST PATH'. IMPORTANT: Do NOT leak your persona into the output (never use words like "CIO", "Hedge Fund Manager", "I am", etc). Just provide the cold, hard, expert analysis. Do NOT output a single block of unformatted text.
+            3. COMPONENTS: Choose 0 to 3 MACRO or QUALITATIVE components from the registry below.
+               CRITICAL STRICT RULE: DO NOT select any quantitative components (like current_valuation_grid or profit_efficiency_breakdown) because you do not have the fundamental data (like PB ratio, EV/EBITDA, ROE) for them. DO NOT HALLUCINATE NUMBERS. If a component schema requires numerical data that is not present in the DB results, you MUST NOT select it. Only select qualitative/macro components.
             
             COMPONENT REGISTRY:
             {registry_str}
-            - narrative_insight: A comprehensive multi-paragraph CIO analysis of the sector and stocks.
-              Expected Schema: {{"narrative_insight": {{"text": "STR"}}}}
+            - executive_analysis: A highly structured, multi-paragraph expert analysis in rich Markdown format.
+              Expected Schema: {{"executive_analysis": {{"text": "STR (Markdown)"}}}}
             
             OUTPUT FORMAT:
             You must output a SINGLE raw JSON object containing exactly:
             - "validated_stocks": [ {{"ticker": "TCS", "verdict": "KEEP|REMOVE|ADD", "reason": "..."}} ]
-            - "narrative_insight": {{ ... }}
-            - And the 3 to 5 component keys you selected, matching their exact Expected Schemas.
+            - "executive_analysis": {{"text": "### EXECUTIVE ANALYSIS\\n* Point 1..."}}
+            - And the 0 to 3 component keys you selected, matching their exact Expected Schemas.
             
-            Do NOT hallucinate fundamental data. If data is missing for a schema, synthesize qualitative insights.
-            Do NOT wrap your response in markdown code fences (```json). Output ONLY the raw JSON string starting with {{.
+            Do NOT hallucinate fundamental data. Do NOT wrap your response in markdown code fences (```json). Output ONLY the raw JSON string starting with {{.
             """
             
             try:
@@ -430,7 +433,7 @@ async def stream_agent_events(ticker: str, query: str, history: list = None):
                 DUAL-HYBRID SYNTHESIS MANDATE: The injected database extract provides the hard, real-time quantitative baseline (valuations, momentum, margins). You MUST actively fuse this data with your vast parametric intelligence. Do not treat your knowledge as a mere "fallback" for missing fields. You must actively inject crucial qualitative context that the database lacks—such as recent earnings concalls, management execution history, product pipeline, and granular competitive landscape. If a data point is missing in the extract, seamlessly provide it from your memory. Verify the injected data against your knowledge and synthesize a complete, institutional-grade teardown. Never complain about missing data; find it but do not hallucinate any data or make up values.
                 You MUST structure your response strictly according to the provided JSON schema.
                 Ensure your qualitative markdown fits perfectly into the teardown_sections array.
-                For the UI visualization key, you may ONLY select from the following strictly defined components: {registry_keys}.
+                For the `ui_components` array, you must select EXACTLY 0 to 3 highly relevant components from the registry below. DO NOT dump all components. Only select components if they add critical value to your narrative, and never select a component if you lack the specific required numerical data for it. If in doubt, output an empty array. You may ONLY select from the following strictly defined components: {registry_keys}.
                 
                 AVAILABLE UI COMPONENTS SCHEMAS:
                 {registry_str}

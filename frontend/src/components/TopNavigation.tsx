@@ -24,15 +24,15 @@ export const TopNavigation = () => {
     }
   }, [isDark]);
   
-  // Admin Toggle Logic
-  const searchParams = new URLSearchParams(location.search);
-  const secretKey = import.meta.env.VITE_ADMIN_KEY;
-  if (secretKey && searchParams.get('key') === secretKey) {
-    localStorage.setItem('admin_mode', 'true');
-  } else if (searchParams.get('key') === 'lock') {
-    localStorage.removeItem('admin_mode');
-  }
-  const isAdmin = localStorage.getItem('admin_mode') === 'true';
+  // // Admin Toggle Logic
+  // const searchParams = new URLSearchParams(location.search);
+  // const secretKey = import.meta.env.VITE_ADMIN_KEY;
+  // if (secretKey && searchParams.get('key') === secretKey) {
+  //   localStorage.setItem('admin_mode', 'true');
+  // } else if (searchParams.get('key') === 'lock') {
+  //   localStorage.removeItem('admin_mode');
+  // }
+  // const isAdmin = localStorage.getItem('admin_mode') === 'true';
   
   const navItems = [
     { name: 'Home', path: '/', icon: <Activity size={16} /> },
@@ -91,23 +91,35 @@ export const TopNavigation = () => {
       </div>
 
       <div className="flex items-center gap-2 shrink-0 ml-2">
-        {isAdmin ? (
+        {
+        // isAdmin ? (
+        //   <Link 
+        //     to="/ai-research"
+        //     className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold bg-purple-500/10 text-purple-300 border border-purple-500/40 hover:bg-purple-500/20 transition-all shadow-[0_0_10px_rgba(168,85,247,0.3)] hover:shadow-[0_0_14px_rgba(168,85,247,0.5)]"
+        //   >
+        //     <BrainCircuit size={14} /> Ask AI
+        //   </Link>
+        // ) 
+        // : (
+        //   <div className="group relative">
+        //     <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold bg-surface border border-border text-text-secondary opacity-50 cursor-not-allowed">
+        //       <BrainCircuit size={14} /> Ask AI <Lock size={12} className="ml-1 opacity-70" />
+        //     </div>
+        //     <div className="absolute top-full mt-2 right-0 bg-surface-hover border border-border p-2 rounded text-[10px] w-48 shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 text-text-secondary font-mono pointer-events-none text-right">
+        //       Due to increased demand, AI Analyst Desk is currently restricted to Enterprise / Internal use only.
+        //     </div>
+        //   </div>
+        // )
+
+        
+        // no need the isAdmin toggle for now, just show the Ask AI button for all users
           <Link 
             to="/ai-research"
             className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold bg-purple-500/10 text-purple-300 border border-purple-500/40 hover:bg-purple-500/20 transition-all shadow-[0_0_10px_rgba(168,85,247,0.3)] hover:shadow-[0_0_14px_rgba(168,85,247,0.5)]"
           >
             <BrainCircuit size={14} /> Ask AI
           </Link>
-        ) : (
-          <div className="group relative">
-            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs font-bold bg-surface border border-border text-text-secondary opacity-50 cursor-not-allowed">
-              <BrainCircuit size={14} /> Ask AI <Lock size={12} className="ml-1 opacity-70" />
-            </div>
-            <div className="absolute top-full mt-2 right-0 bg-surface-hover border border-border p-2 rounded text-[10px] w-48 shadow-xl opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 text-text-secondary font-mono pointer-events-none text-right">
-              Due to increased demand, AI Analyst Desk is currently restricted to Enterprise / Internal use only.
-            </div>
-          </div>
-        )}
+        }
         
         {isLandingPage && (
           <button 

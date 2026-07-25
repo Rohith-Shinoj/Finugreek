@@ -1127,12 +1127,6 @@ export const MultidimensionalChart = ({
     refs.sma.applyOptions({ visible: showBands });
     refs.bbw?.applyOptions({ visible: showBands });
 
-    // Sector Overlay
-    refs.sector?.applyOptions({ visible: showSector });
-    
-    // Nifty Overlay
-    refs.nifty?.applyOptions({ visible: showNifty });
-    
     if (showNifty || showSector) {
       chartRef.current.applyOptions({
         rightPriceScale: { mode: 2 } // Percentage mode
@@ -1143,7 +1137,36 @@ export const MultidimensionalChart = ({
       });
     }
 
-  }, [viewMode, showNifty, showSector, showBands]);
+    const logicalRange = chartRef.current.timeScale().getVisibleLogicalRange();
+    let startIdx = 0;
+    if (logicalRange !== null && parsedData && parsedData.length > 0) {
+        startIdx = Math.min(Math.max(0, Math.floor(logicalRange.from)), parsedData.length - 1);
+    }
+    const startRange = parsedData && parsedData.length > 0 ? parsedData[startIdx].time : null;
+
+    const getStartPriceForOverlay = (dataArray: any[], timeStr: string) => {
+      if (!dataArray || dataArray.length === 0) return 0;
+      for (let i = 0; i < dataArray.length; i++) {
+        if (new Date(dataArray[i].time).getTime() >= new Date(timeStr).getTime()) {
+          return dataArray[i].value || dataArray[i].close;
+        }
+      }
+      return dataArray[dataArray.length - 1].value || dataArray[dataArray.length - 1].close;
+    };
+
+    // Sector Overlay
+    if (showSector && sectorData && sectorData.length > 0 && startRange) {
+      refs.sector?.applyOptions({ baseValue: { type: 'price', price: getStartPriceForOverlay(sectorData, startRange) } });
+    }
+    refs.sector?.applyOptions({ visible: showSector });
+    
+    // Nifty Overlay
+    if (showNifty && niftyData && niftyData.length > 0 && startRange) {
+      refs.nifty?.applyOptions({ baseValue: { type: 'price', price: getStartPriceForOverlay(niftyData, startRange) } });
+    }
+    refs.nifty?.applyOptions({ visible: showNifty });
+    
+  }, [viewMode, showNifty, showSector, showBands, parsedData, niftyData, sectorData]);
 
 
   // Technical Overlays Update

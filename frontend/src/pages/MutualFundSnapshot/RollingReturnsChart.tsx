@@ -1,35 +1,71 @@
 import React, { useMemo } from 'react';
 import { ResponsiveContainer, AreaChart, Area, XAxis, YAxis, Tooltip, ReferenceLine } from 'recharts';
 
-export const RollingReturnsChart = ({ fund }: { fund: any }) => {
+export const RollingReturnsChart = ({ fund, niftyData }: { fund: any, niftyData?: any[] }) => {
   const data = useMemo(() => {
-    const seed = fund?.scheme_code ? parseInt(fund.scheme_code.replace(/\D/g, '')) : 12345;
-    const baseReturn = parseFloat(fund?.return3y || '12');
+    if (!fund?.historical_navs || !niftyData || niftyData.length === 0) return [];
     
-    const points = [];
-    let current = baseReturn - 5;
-    const now = new Date();
-    
-    // Generate 5 years of 3Y rolling return data points (monthly)
-    for (let i = 60; i >= 0; i--) {
-      const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+    try {
+      const navs = (typeof fund.historical_navs === 'string' ? JSON.parse(fund.historical_navs) : fund.historical_navs)
+        .map((d: any) => ({ time: new Date(d[0]).getTime(), value: d[1] }))
+        .sort((a: any, b: any) => a.time - b.time);
+        
+      const benchMap = new Map(niftyData.map((d: any) => [new Date(d.time).getTime(), d.value]));
+      const benchTimes = Array.from(benchMap.keys()).sort((a, b) => a - b);
       
-      // Mean reversion to baseReturn
-      const drift = (baseReturn - current) * 0.1;
-      const noise = (Math.sin(seed + i * 0.5) * 3 + Math.cos(seed * 2 + i * 0.3) * 2);
-      current += drift + noise;
+      const getClosestValue = (arr: {time: number, value: number}[], t: number) => {
+        let left = 0, right = arr.length - 1;
+        if (t <= arr[left].time) return arr[left].value;
+        if (t >= arr[right].time) return arr[right].value;
+        while (left <= right) {
+          const mid = Math.floor((left + right) / 2);
+          if (arr[mid].time === t) return arr[mid].value;
+          if (arr[mid].time < t) left = mid + 1;
+          else right = mid - 1;
+        }
+        return arr[right].value; // closest earlier
+      };
+
+      const getClosestBench = (t: number) => {
+        let left = 0, right = benchTimes.length - 1;
+        if (t <= benchTimes[left]) return benchMap.get(benchTimes[left])!;
+        if (t >= benchTimes[right]) return benchMap.get(benchTimes[right])!;
+        while (left <= right) {
+          const mid = Math.floor((left + right) / 2);
+          if (benchTimes[mid] === t) return benchMap.get(benchTimes[mid])!;
+          if (benchTimes[mid] < t) left = mid + 1;
+          else right = mid - 1;
+        }
+        return benchMap.get(benchTimes[right])!; // closest earlier
+      };
+
+      const points = [];
+      const THREE_YEARS_MS = 3 * 365 * 24 * 60 * 60 * 1000;
+      const now = new Date();
       
-      const benchNoise = (Math.cos(seed + i * 0.4) * 2.5);
-      const bench = (baseReturn - 3) + benchNoise; // Simulate benchmark slightly lower
-      
-      points.push({
-        date: d.toLocaleDateString('en-US', { month: 'short', year: '2-digit' }),
-        value: Number(current.toFixed(2)),
-        benchmark: Number(bench.toFixed(2))
-      });
-    }
-    return points;
-  }, [fund]);
+      for (let i = 60; i >= 0; i--) {
+        const d = new Date(now.getFullYear(), now.getMonth() - i, 1);
+        const t = d.getTime();
+        const t_minus_3y = t - THREE_YEARS_MS;
+        
+        const fundNow = getClosestValue(navs, t);
+        const fundPast = getClosestValue(navs, t_minus_3y);
+        
+        const benchNow = getClosestBench(t);
+        const benchPast = getClosestBench(t_minus_3y);
+        
+        const fRet = (Math.pow(fundNow / fundPast, 1/3) - 1) * 100;
+        const bRet = (Math.pow(benchNow / benchPast, 1/3) - 1) * 100;
+        
+        points.push({
+          date: d.toLocaleDateString('en-US', { month: 'short', year: '2-digit' }),
+          value: Number(fRet.toFixed(2)),
+          benchmark: Number(bRet.toFixed(2))
+        });
+      }
+      return points;
+    } catch(e) { return []; }
+  }, [fund, niftyData]);
 
   const winRate = useMemo(() => {
     if (data.length === 0) return 0;

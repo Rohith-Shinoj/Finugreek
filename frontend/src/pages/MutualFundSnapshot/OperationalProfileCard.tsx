@@ -4,15 +4,8 @@ import { HelpCircle } from 'lucide-react';
 import { MetricBox } from '../../components/MetricBox';
 
 export const OperationalProfileCard = ({ fund }: { fund: any }) => {
-  // Procedural stats for deep institutional data that may be missing from retail DB
-  const seed = fund?.scheme_code ? parseInt(fund.scheme_code.replace(/\D/g, '')) : 12345;
-  const pseudoRand = (min: number, max: number, offset: number) => {
-    const x = Math.sin(seed + offset) * 10000;
-    return min + (x - Math.floor(x)) * (max - min);
-  };
-  
-  const turnoverRatio = pseudoRand(15, 85, 1).toFixed(0);
-  const managerTenure = pseudoRand(2.5, 12, 2).toFixed(1);
+  const turnoverRatio = "N/A";
+  const managerTenure = "N/A";
   
   // Risk Gauge Logic
   const riskMap: Record<string, { val: number, color: string }> = {

@@ -51,9 +51,9 @@ app.include_router(crypto_router)
 
 # Use absolute path to resolve the symlink relative to this file
 BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-DB_PATH = os.path.realpath(os.path.join(BASE_DIR, "datasets/active/market_data.parquet"))
-MF_DB_PATH = os.path.realpath(os.path.join(BASE_DIR, "datasets/active/mutual_funds.parquet"))
-ETF_DB_PATH = os.path.realpath(os.path.join(BASE_DIR, "datasets/active/etfs.parquet"))
+DB_PATH = os.path.join(BASE_DIR, "datasets/active/market_data.parquet")
+MF_DB_PATH = os.path.join(BASE_DIR, "datasets/active/mutual_funds.parquet")
+ETF_DB_PATH = os.path.join(BASE_DIR, "datasets/active/etfs.parquet")
 ADMIN_TOKEN = os.getenv("ADMIN_TOKEN")
 
 # Global connection to be reused/reloaded
@@ -97,9 +97,9 @@ def reload_db(token: str = Depends(verify_admin_token)):
             _db_con = None
         
         # Resolve the new symlink target using absolute path
-        DB_PATH = os.path.realpath(os.path.join(BASE_DIR, "datasets/active/market_data.parquet"))
-        MF_DB_PATH = os.path.realpath(os.path.join(BASE_DIR, "datasets/active/mutual_funds.parquet"))
-        ETF_DB_PATH = os.path.realpath(os.path.join(BASE_DIR, "datasets/active/etfs.parquet"))
+        DB_PATH = os.path.join(BASE_DIR, "datasets/active/market_data.parquet")
+        MF_DB_PATH = os.path.join(BASE_DIR, "datasets/active/mutual_funds.parquet")
+        ETF_DB_PATH = os.path.join(BASE_DIR, "datasets/active/etfs.parquet")
         
         # Clear cache
         _search_cache = []

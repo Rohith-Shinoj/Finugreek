@@ -424,12 +424,6 @@ export const MutualFundPriceChart = ({ fund, setIsAIOverlayOpen }: { fund: any, 
     const isOverlayActive = showNifty || showSector;
 
     if (seriesRef.current.nifty) {
-      seriesRef.current.nifty.applyOptions({ visible: showNifty });
-      seriesRef.current.sector?.applyOptions({ visible: showSector });
-      seriesRef.current.upperBand?.applyOptions({ visible: showBands });
-      seriesRef.current.lowerBand?.applyOptions({ visible: showBands });
-      seriesRef.current.sma?.applyOptions({ visible: showBands });
-
       if (showNifty || showSector) {
         chartRef.current.applyOptions({
           rightPriceScale: { mode: 2 } // Percentage mode
@@ -439,9 +433,40 @@ export const MutualFundPriceChart = ({ fund, setIsAIOverlayOpen }: { fund: any, 
           rightPriceScale: { mode: 0 } // Normal mode
         });
       }
+
+      const logicalRange = chartRef.current.timeScale().getVisibleLogicalRange();
+      let startIdx = 0;
+      if (logicalRange !== null && parsedData && parsedData.length > 0) {
+          startIdx = Math.min(Math.max(0, Math.floor(logicalRange.from)), parsedData.length - 1);
+      }
+      const startRange = parsedData && parsedData.length > 0 ? parsedData[startIdx].time : null;
+
+      const getStartPriceForOverlay = (dataArray: any[], timeStr: string) => {
+        if (!dataArray || dataArray.length === 0) return 0;
+        for (let i = 0; i < dataArray.length; i++) {
+          if (new Date(dataArray[i].time).getTime() >= new Date(timeStr).getTime()) {
+            return dataArray[i].value;
+          }
+        }
+        return dataArray[dataArray.length - 1].value;
+      };
+
+      if (showSector && sectorData && sectorData.length > 0 && startRange) {
+        seriesRef.current.sector?.applyOptions({ baseValue: { type: 'price', price: getStartPriceForOverlay(sectorData, startRange) } });
+      }
+      seriesRef.current.sector?.applyOptions({ visible: showSector });
+
+      if (showNifty && niftyData && niftyData.length > 0 && startRange) {
+        seriesRef.current.nifty.applyOptions({ baseValue: { type: 'price', price: getStartPriceForOverlay(niftyData, startRange) } });
+      }
+      seriesRef.current.nifty.applyOptions({ visible: showNifty });
+
+      seriesRef.current.upperBand?.applyOptions({ visible: showBands });
+      seriesRef.current.lowerBand?.applyOptions({ visible: showBands });
+      seriesRef.current.sma?.applyOptions({ visible: showBands });
     }
 
-  }, [viewMode, showNifty, showSector, showBands]);
+  }, [viewMode, showNifty, showSector, showBands, parsedData, niftyData, sectorData]);
 
   // Sync Overlay Data when Fetched
   useEffect(() => {

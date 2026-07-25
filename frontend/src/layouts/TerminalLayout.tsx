@@ -107,16 +107,18 @@ export const TerminalLayout = () => {
                     </div>
                     <div>
                        {stockData ? (
-                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-[480px] [&>*]:min-h-0">
-                           <FinancialHealth data={stockData} />
-                           <ValuationGauges data={stockData} />
-                           <OwnershipTrends data={stockData} />
-                           <EarningsQuality data={stockData} />
-                           <FactorAttribution data={stockData} />
-                           <DeepFinancials data={stockData} />
-                           <NewsSentiment data={stockData} />
-                           <MacroResilience data={stockData} />
-                           {selectedStockSlug && <RelatedStocks slug={selectedStockSlug} />}
+                         <div className="flex flex-col gap-6">
+                           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 auto-rows-[480px] [&>*]:min-h-0">
+                             <FinancialHealth data={stockData} />
+                             <ValuationGauges data={stockData} />
+                             <OwnershipTrends data={stockData} />
+                             <EarningsQuality data={stockData} />
+                             <FactorAttribution data={stockData} />
+                             <DeepFinancials data={stockData} />
+                             <NewsSentiment data={stockData} />
+                             <MacroResilience data={stockData} />
+                             {selectedStockSlug && <RelatedStocks slug={selectedStockSlug} />}
+                           </div>
                            {selectedStockSlug && <BrokerTargets slug={selectedStockSlug} />}
                          </div>
                        ) : (

@@ -2,13 +2,7 @@ import React from 'react';
 import { Radar, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, ResponsiveContainer, Tooltip } from 'recharts';
 import { Crosshair, HelpCircle } from 'lucide-react';
 
-export const RiskReturnRadarCard = ({ fund }: { fund: any }) => {
-  // Procedural stats for deep institutional data that may be missing from retail DB
-  const seed = fund?.scheme_code ? parseInt(fund.scheme_code.replace(/\D/g, '')) : 12345;
-  const pseudoRand = (min: number, max: number, offset: number) => {
-    const x = Math.sin(seed + offset) * 10000;
-    return min + (x - Math.floor(x)) * (max - min);
-  };
+export const RiskReturnRadarCard = ({ fund, metrics }: { fund: any, metrics?: any }) => {
   // Parse advanced_stats safely
   let statsArr: any[] = [];
   try {
@@ -20,16 +14,15 @@ export const RiskReturnRadarCard = ({ fund }: { fund: any }) => {
     return s && !isNaN(parseFloat(s[`stat_${period}`])) ? parseFloat(s[`stat_${period}`]) : null;
   };
 
-  // Real or procedural data for Risk/Return
-  const sharpe = getStat('Sharpe Ratio', '3y') || parseFloat(pseudoRand(0.6, 2.5, 1).toFixed(2));
-  const sortino = getStat('Sortino Ratio', '3y') || parseFloat(pseudoRand(0.8, 3.5, 2).toFixed(2));
+  const sharpe = metrics?.sharpe ? parseFloat(metrics.sharpe) : getStat('Sharpe Ratio', '3y') || 0;
+  const sortino = metrics?.sortino ? parseFloat(metrics.sortino) : getStat('Sortino Ratio', '3y') || 0;
   
   const fundData = {
     sharpe: sharpe,
     sortino: sortino,
-    stdDev: pseudoRand(12, 22, 3), 
-    beta: pseudoRand(0.7, 1.3, 4),
-    infoRatio: pseudoRand(-0.5, 1.5, 5),
+    stdDev: 15, // Without full daily historicals for all categories, defaulting standard deviation scale placeholder or removing it.
+    beta: 1.0,
+    infoRatio: metrics?.infoRatio ? parseFloat(metrics.infoRatio) : 0,
   };
   
   const catData = {

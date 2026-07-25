@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { fetchMutualFundByCode } from '../../api';
+import { fetchMutualFundByCode, fetchStockData } from '../../api';
 import { ChevronLeft, HelpCircle, TrendingDown, Target, Shield, Activity, BarChart2, Briefcase, BrainCircuit } from 'lucide-react';
 import { MutualFundPriceChart } from './MutualFundPriceChart';
 import { RollingReturnsChart } from './RollingReturnsChart';
@@ -68,21 +68,117 @@ export const MutualFundSnapshot = () => {
     } catch { return []; }
   }, [fund?.advanced_stats]);
 
-  // Institutional Metrics (Procedurally generated based on scheme_code for realism and stability since DB lacks them)
-  const { sharpe, sortino, infoRatio, upCapture, downCapture } = useMemo(() => {
-    const seed = fund?.scheme_code ? parseInt(fund.scheme_code.replace(/\D/g, '')) : 12345;
-    const pseudoRand = (min: number, max: number, offset: number) => {
-      const x = Math.sin(seed + offset) * 10000;
-      return min + (x - Math.floor(x)) * (max - min);
-    };
-    return {
-      sharpe: pseudoRand(0.6, 2.1, 1).toFixed(2),
-      sortino: pseudoRand(0.8, 3.5, 2).toFixed(2),
-      infoRatio: pseudoRand(-0.2, 1.4, 3).toFixed(2),
-      upCapture: Math.round(pseudoRand(85, 115, 4)),
-      downCapture: Math.round(pseudoRand(65, 105, 5))
-    };
-  }, [fund]);
+  const { data: niftyDataRaw } = useQuery({
+    queryKey: ['stockData', 'nifty'],
+    queryFn: () => fetchStockData('nifty'),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const niftyData = useMemo(() => {
+    const ohlcv = niftyDataRaw?.absolute?.OHLCV;
+    if (!ohlcv || !Array.isArray(ohlcv)) return [];
+    return [...ohlcv].map((d: any) => {
+      if (!d || !d.Date) return null;
+      let timeStr = d.Date;
+      const parts = d.Date.split('-');
+      if (parts.length === 3 && parts[2].length === 4) {
+        timeStr = `${parts[2]}-${parts[1]}-${parts[0]}`;
+      }
+      return { time: timeStr, value: d.Close };
+    }).filter(Boolean).sort((a: any, b: any) => {
+      if (!a?.time || !b?.time) return 0;
+      return new Date(a.time).getTime() - new Date(b.time).getTime();
+    });
+  }, [niftyDataRaw]);
+
+  // Actual Rigorous Financial Calculations
+  const { sharpe, sortino, infoRatio, upCapture, downCapture, alpha, trackingError } = useMemo(() => {
+    if (!fund?.historical_navs || !niftyData || niftyData.length === 0) {
+      return { sharpe: "0.00", sortino: "0.00", infoRatio: "0.00", upCapture: 0, downCapture: 0, alpha: "0.00", trackingError: "0.00" };
+    }
+    
+    try {
+      // Parse NAVs
+      const navs = (typeof fund.historical_navs === 'string' ? JSON.parse(fund.historical_navs) : fund.historical_navs)
+        .map((d: any) => {
+          if (!d || !d[0]) return null;
+          try {
+            return { time: new Date(d[0]).toISOString().split('T')[0], value: d[1] };
+          } catch(e) { return null; }
+        })
+        .filter(Boolean)
+        .sort((a: any, b: any) => {
+          if (!a?.time || !b?.time) return 0;
+          return new Date(a.time).getTime() - new Date(b.time).getTime();
+        });
+
+      if (navs.length < 30) return { sharpe: "0.00", sortino: "0.00", infoRatio: "0.00", upCapture: 0, downCapture: 0 };
+
+      // Align dates
+      const benchMap = new Map(niftyData.map((d: any) => [d.time.split('T')[0], d.value]));
+      
+      const fundReturns: number[] = [];
+      const benchReturns: number[] = [];
+      const activeReturns: number[] = [];
+      
+      let upFund = 0, upBench = 0;
+      let downFund = 0, downBench = 0;
+
+      for (let i = 1; i < navs.length; i++) {
+        const t = navs[i].time;
+        if (!benchMap.has(t)) continue; // Only compare on shared trading days
+        
+        const prevT = navs[i-1].time;
+        if (!benchMap.has(prevT)) continue;
+
+        const fRet = (navs[i].value / navs[i-1].value) - 1;
+        const bRet = (benchMap.get(t)! / benchMap.get(prevT)!) - 1;
+        
+        fundReturns.push(fRet);
+        benchReturns.push(bRet);
+        activeReturns.push(fRet - bRet);
+
+        if (bRet > 0) {
+           upFund += fRet;
+           upBench += bRet;
+        } else if (bRet < 0) {
+           downFund += fRet;
+           downBench += bRet;
+        }
+      }
+
+      if (fundReturns.length === 0) return { sharpe: "0.00", sortino: "0.00", infoRatio: "0.00", upCapture: 0, downCapture: 0 };
+
+      const meanF = fundReturns.reduce((a, b) => a + b, 0) / fundReturns.length;
+      const stdF = Math.sqrt(fundReturns.reduce((a, b) => a + Math.pow(b - meanF, 2), 0) / fundReturns.length);
+      
+      const downsideReturns = fundReturns.filter(r => r < 0);
+      const downsideStdF = Math.sqrt(downsideReturns.reduce((a, b) => a + Math.pow(b, 2), 0) / (downsideReturns.length || 1));
+
+      const meanA = activeReturns.reduce((a, b) => a + b, 0) / activeReturns.length;
+      const trackingErrorVal = Math.sqrt(activeReturns.reduce((a, b) => a + Math.pow(b - meanA, 2), 0) / activeReturns.length);
+
+      const sharpeVal = stdF > 0 ? (meanF / stdF) * Math.sqrt(252) : 0;
+      const sortinoVal = downsideStdF > 0 ? (meanF / downsideStdF) * Math.sqrt(252) : 0;
+      const infoVal = trackingErrorVal > 0 ? (meanA / trackingErrorVal) * Math.sqrt(252) : 0;
+      
+      const upCap = upBench > 0 ? (upFund / upBench) * 100 : 0;
+      const downCap = downBench < 0 ? (downFund / downBench) * 100 : 0;
+      const alphaVal = (meanA * 252 * 100); // annualized alpha
+
+      return {
+        sharpe: sharpeVal.toFixed(2),
+        sortino: sortinoVal.toFixed(2),
+        infoRatio: infoVal.toFixed(2),
+        upCapture: Math.round(upCap),
+        downCapture: Math.round(downCap),
+        alpha: alphaVal.toFixed(2),
+        trackingError: (trackingErrorVal * Math.sqrt(252) * 100).toFixed(2)
+      };
+    } catch (e) {
+      return { sharpe: "0.00", sortino: "0.00", infoRatio: "0.00", upCapture: 0, downCapture: 0, alpha: "0.00", trackingError: "0.00" };
+    }
+  }, [fund, niftyData]);
 
   // Sector Allocation Map
   const sectorAllocations = useMemo(() => {
@@ -155,7 +251,7 @@ export const MutualFundSnapshot = () => {
           {/* Row 1: The Core Identity & Intrinsic Structure */}
           <OperationalProfileCard fund={fund} />
           <AssetAllocationCard fund={fund} />
-          <RiskReturnRadarCard fund={fund} />
+          <RiskReturnRadarCard fund={fund} metrics={{sharpe, sortino, infoRatio}} />
 
           {/* Row 2: Deep Dive into Portfolio & Consistency */}
           <HoldingsConcentrationCard fund={fund} />
@@ -169,14 +265,14 @@ export const MutualFundSnapshot = () => {
               </div>
             </h3>
             <div className="flex-1 relative min-h-0">
-               <RollingReturnsChart fund={fund} />
+               <RollingReturnsChart fund={fund} niftyData={niftyData} />
             </div>
           </div>
 
           <DrawdownProfileCard fund={fund} />
 
           {/* Row 3: Evaluation & Simulation */}
-          <MarketCaptureAlphaCard fund={fund} />
+          <MarketCaptureAlphaCard fund={fund} metrics={{upCapture, downCapture, alpha, trackingError}} />
           <SipSimulatorCard fund={fund} />
           <PeerCoMovementCard fund={fund} />
 

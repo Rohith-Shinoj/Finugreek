@@ -124,8 +124,8 @@ export const ValuationGauges = ({ data }: { data: any }) => {
                 {scatterData.map((entry: any, index: number) => (
                   <Cell 
                     key={`cell-${index}`} 
-                    fill={entry.isCurrent ? '#10b981' : '#52525b'} 
-                    opacity={entry.isCurrent ? 1 : 0.4}
+                    fill={entry.isCurrent ? '#10b981' : '#cbd5e1'} 
+                    opacity={entry.isCurrent ? 1 : 0.7}
                     className={entry.isCurrent ? "animate-pulse" : ""}
                     stroke={entry.isCurrent ? '#ffffff' : 'none'}
                     strokeWidth={entry.isCurrent ? 2 : 0}

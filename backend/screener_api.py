@@ -252,8 +252,8 @@ def _init_con() -> duckdb.DuckDBPyConnection:
     """Create the singleton connection and register views."""
     global _screener_con
     
-    db_parquet_actual = os.path.realpath(DB_PARQUET_LINK)
-    mf_parquet_actual = os.path.realpath(MF_PARQUET_LINK)
+    db_parquet_actual = DB_PARQUET_LINK
+    mf_parquet_actual = MF_PARQUET_LINK
     
     if not os.path.exists(db_parquet_actual):
         raise RuntimeError(f"Parquet not found: {db_parquet_actual}")
@@ -269,7 +269,7 @@ def _init_con() -> duckdb.DuckDBPyConnection:
     if os.path.exists(mf_parquet_actual):
         con.execute(f"CREATE OR REPLACE VIEW mutual_funds AS SELECT * FROM '{mf_parquet_actual}'")
 
-    etf_parquet_actual = os.path.realpath(ETF_PARQUET_LINK)
+    etf_parquet_actual = ETF_PARQUET_LINK
     if os.path.exists(etf_parquet_actual):
         con.execute(f"CREATE OR REPLACE VIEW etfs AS SELECT * FROM '{etf_parquet_actual}'")
         

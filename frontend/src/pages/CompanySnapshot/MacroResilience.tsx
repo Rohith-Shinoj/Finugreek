@@ -5,10 +5,69 @@ import { Shield, TrendingUp, TrendingDown, Clock, Activity, HelpCircle } from 'l
 export const MacroResilience = ({ data }: { data: any }) => {
   const resilience = data.relative?.macro_resilience_profile || {};
   
-  const upBeta = resilience.up_beta !== undefined ? resilience.up_beta : null;
-  const downBeta = resilience.down_beta !== undefined ? resilience.down_beta : null;
-  const upCapture = resilience.up_capture !== undefined ? resilience.up_capture : null;
-  const downCapture = resilience.down_capture !== undefined ? resilience.down_capture : null;
+  const { upCapture, downCapture, upBeta, downBeta } = React.useMemo(() => {
+    const ohlcv = data?.absolute?.OHLCV || [];
+    const benchOhlcv = data?.benchmark_ohlcv || [];
+    if (ohlcv.length < 30 || benchOhlcv.length < 30) {
+      return { upCapture: null, downCapture: null, upBeta: null, downBeta: null };
+    }
+    
+    const stockMap = new Map(ohlcv.filter((d: any) => d && d.Date).map((d: any) => [d.Date, d.Close]));
+    const benchMap = new Map(benchOhlcv.filter((d: any) => d && d.Date).map((d: any) => [d.Date, d.Close]));
+    
+    const dates = Array.from(stockMap.keys()).sort((a: any, b: any) => new Date(a).getTime() - new Date(b).getTime());
+    
+    let upStock = 0, upBench = 0;
+    let downStock = 0, downBench = 0;
+    
+    let upS: number[] = [], upB: number[] = [];
+    let downS: number[] = [], downB: number[] = [];
+
+    for (let i = 1; i < dates.length; i++) {
+      const t = dates[i];
+      const prevT = dates[i-1];
+      
+      if (!benchMap.has(t) || !benchMap.has(prevT)) continue;
+      
+      const sRet = (stockMap.get(t) as number / (stockMap.get(prevT) as number)) - 1;
+      const bRet = (benchMap.get(t) as number / (benchMap.get(prevT) as number)) - 1;
+      
+      if (bRet > 0) {
+         upStock += sRet;
+         upBench += bRet;
+         upS.push(sRet); upB.push(bRet);
+      } else if (bRet < 0) {
+         downStock += sRet;
+         downBench += bRet;
+         downS.push(sRet); downB.push(bRet);
+      }
+    }
+    
+    const upC = upBench !== 0 ? upStock / upBench : null;
+    const downC = downBench !== 0 ? downStock / downBench : null;
+    
+    const calcBeta = (sArr: number[], bArr: number[]) => {
+       if(sArr.length < 2) return null;
+       const meanS = sArr.reduce((a,b)=>a+b,0)/sArr.length;
+       const meanB = bArr.reduce((a,b)=>a+b,0)/bArr.length;
+       
+       let covar = 0;
+       let varB = 0;
+       for(let i=0; i<sArr.length; i++) {
+         covar += (sArr[i] - meanS)*(bArr[i] - meanB);
+         varB += Math.pow(bArr[i] - meanB, 2);
+       }
+       return varB === 0 ? null : covar / varB;
+    };
+    
+    return {
+      upCapture: upC,
+      downCapture: downC,
+      upBeta: calcBeta(upS, upB),
+      downBeta: calcBeta(downS, downB)
+    };
+  }, [data]);
+  
   const vixStress = resilience.vix_stress_reaction !== undefined ? resilience.vix_stress_reaction : null;
   const avgRecovery = resilience.avg_recovery_days !== undefined ? resilience.avg_recovery_days : null;
 

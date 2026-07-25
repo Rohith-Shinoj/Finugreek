@@ -40,12 +40,52 @@ def fetch_broker_targets_from_mc(slug: str, ticker: str):
                     cols = row.find_all('td')
                     if len(cols) > 8:
                         date_str = cols[1].text.strip()
-                        broker = cols[3].text.strip().replace('\n', ' ').replace('Target', '').strip()
+                        
+                        # Parse broker name and signals from Col 3
+                        broker_col = cols[3]
+                        broker_link = broker_col.find('a')
+                        if not broker_link:
+                            continue
+                        broker = broker_link.text.strip().replace('\n', ' ').strip()
                         if 'Consensus' in broker:
                             continue
                             
+                        signals = []
+                        label = broker_col.find('label')
+                        if label:
+                            label_text = label.text.strip() # "Target" or "Reco"
+                            icon = label.find('i')
+                            direction = 'up' if icon and 'arrow-up' in icon.get('class', []) else 'down'
+                            
+                            # Construct the signal string
+                            if label_text.lower() == 'target':
+                                sig_type = 'Increased target price' if direction == 'up' else 'Reduced target price'
+                            elif label_text.lower() == 'reco':
+                                sig_type = 'Upgraded rating' if direction == 'up' else 'Downgraded rating'
+                            else:
+                                sig_type = label_text
+                                
+                            signals.append({
+                                'type': sig_type,
+                                'direction': direction
+                            })
+                            
                         target_price_str = cols[5].text.strip()
                         action = cols[8].text.strip().upper()
+                        
+                        # Parse price_at_reco from Col 6
+                        # Format: "1003.25 \n (1.17%)" or "-"
+                        price_at_reco = None
+                        price_at_reco_change = None
+                        reco_str = cols[6].text.strip()
+                        if reco_str and reco_str != '-':
+                            parts = reco_str.split()
+                            try:
+                                price_at_reco = float(parts[0].replace(',', ''))
+                                if len(parts) > 1:
+                                    price_at_reco_change = parts[1].strip() # "(1.17%)"
+                            except ValueError:
+                                pass
                         
                         try:
                             target_price = float(target_price_str.replace(',', ''))
@@ -54,7 +94,9 @@ def fetch_broker_targets_from_mc(slug: str, ticker: str):
                                 'broker': broker,
                                 'action': action if action else 'HOLD',
                                 'target_price': target_price,
-                                'price_at_reco': None,
+                                'price_at_reco': price_at_reco,
+                                'price_at_reco_change': price_at_reco_change,
+                                'signals': signals,
                                 'is_target_met': False
                             })
                         except ValueError:
@@ -68,7 +110,7 @@ def fetch_broker_targets_from_mc(slug: str, ticker: str):
                 unique_targets[b] = r
                 
         final_targets = list(unique_targets.values())
-        return final_targets[:5]
+        return final_targets
         
     except Exception as e:
         print(f"Failed to fetch Trendlyne targets for {slug}: {e}")

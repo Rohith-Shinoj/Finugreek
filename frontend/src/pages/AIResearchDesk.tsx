@@ -325,10 +325,12 @@ const AssistantMessage = ({ payload }: { payload: ChatMessage }) => {
              </div>
              
              {parsedData.ui_components && parsedData.ui_components.length > 0 && (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6 border-t border-border pt-6">
-                   {parsedData.ui_components.map((comp: any, idx: number) => (
-                      <ComponentRegistry key={idx} componentKey={comp.type} data={comp.data} />
-                   ))}
+                <div className="mt-6 border-t border-border pt-6">
+                   <TabbedLayout 
+                     data={Object.fromEntries(parsedData.ui_components.map((c: any) => [c.type, c.data]))} 
+                     keys={parsedData.ui_components.map((c: any) => c.type)} 
+                     isStreaming={isStreaming} 
+                   />
                 </div>
              )}
            </div>
@@ -403,12 +405,6 @@ const NativeDataGrid = ({ data, logs, isStreaming, unverified, parseFailed, rawS
             <span className="text-text-primary font-semibold tracking-wider">
               {isStreaming ? "GENERATING ANALYSIS..." : "ANALYSIS COMPLETE"}
             </span>
-          </div>
-          <div className="space-y-1 ml-6 text-text-secondary">
-            <div><span className="text-emerald-700">{'>'}</span> Parsed Intention: <span className="text-text-secondary">Quantitative Filter</span></div>
-            {logs.map((l, i) => (
-              <div key={i}><span className="text-emerald-700">{'>'}</span> Extraction: <span className="text-emerald-400">{l}</span></div>
-            ))}
           </div>
         </div>
       )}
@@ -520,7 +516,7 @@ const ComponentRegistry = ({ componentKey, data }: { componentKey: string, data:
   if (!data) return <div className="h-32 bg-surface/50 rounded-lg animate-pulse" />; // Skeleton
 
   switch (componentKey) {
-    case 'narrative_insight':
+    case 'executive_analysis':
       return <NarrativeInsight data={data} />;
     case 'technical_levels':
       return <TechnicalLevels data={data} />;

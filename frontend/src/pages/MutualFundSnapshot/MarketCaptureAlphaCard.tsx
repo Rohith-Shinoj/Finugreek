@@ -1,24 +1,13 @@
 import React, { useMemo } from 'react';
 import { BarChart2, HelpCircle } from 'lucide-react';
 
-export const MarketCaptureAlphaCard = ({ fund }: { fund: any }) => {
+export const MarketCaptureAlphaCard = ({ fund, metrics }: { fund: any, metrics?: any }) => {
   // Up/Down Capture
-  const { niftyUp, niftyDown, sectorUp, sectorDown } = useMemo(() => {
-    const seed = fund?.scheme_code ? parseInt(fund.scheme_code.replace(/\D/g, '')) : 12345;
-    const pseudoRand = (min: number, max: number, offset: number) => {
-      const x = Math.sin(seed + offset) * 10000;
-      return min + (x - Math.floor(x)) * (max - min);
-    };
-    return {
-      niftyUp: Math.round(pseudoRand(85, 125, 4)),
-      niftyDown: Math.round(pseudoRand(60, 105, 5)),
-      sectorUp: Math.round(pseudoRand(90, 115, 6)),
-      sectorDown: Math.round(pseudoRand(70, 95, 7))
-    };
-  }, [fund]);
-
-  const niftyRatio = (niftyUp / niftyDown).toFixed(2);
-  const sectorRatio = (sectorUp / sectorDown).toFixed(2);
+  const niftyUp = metrics?.upCapture || 0;
+  const niftyDown = metrics?.downCapture || 0;
+  // Sector capture disabled per real data guidelines
+  
+  const niftyRatio = niftyDown !== 0 ? (niftyUp / niftyDown).toFixed(2) : "0.00";
 
   const CaptureColumn = ({ title, up, down, ratio }: any) => (
     <div className="flex flex-col gap-2 bg-white/5 rounded-lg p-2.5 border border-border">
@@ -43,19 +32,15 @@ export const MarketCaptureAlphaCard = ({ fund }: { fund: any }) => {
       </div>
       <div className="flex justify-between items-center mt-1 pt-1.5 border-t border-border">
         <span className="text-[10px] font-semibold text-text-secondary uppercase">Ratio</span>
-        <span className={`text-xs font-mono font-bold ${ratio > 1 ? 'text-emerald-400' : 'text-red-400'}`}>{ratio}</span>
+        <span className={`text-xs font-mono font-bold ${parseFloat(ratio) > 1 ? 'text-emerald-400' : 'text-red-400'}`}>{ratio}</span>
       </div>
     </div>
   );
 
   // Alpha and Tracking Error
   const fundRet = parseFloat(fund.return1y || fund.return3y || '12');
-  const catRet = (fundRet * 0.85); // Mock fallback
-  
-  const alpha = fundRet - catRet;
-  // Procedural tracking error
-  const teSeed = fund?.scheme_code ? parseInt(fund.scheme_code.replace(/\D/g, '')) : 123;
-  const trackingError = (1 + (Math.cos(teSeed) * 5)).toFixed(2); // 1% to 6%
+  const alpha = metrics?.alpha ? parseFloat(metrics.alpha) : 0;
+  const trackingError = metrics?.trackingError || "0.00";
   const teValue = parseFloat(trackingError);
   
   const alphaPercentile = Math.min(Math.max(((alpha + 5) / 10) * 100, 0), 100); // Scale -5 to +5 alpha to 0-100%
@@ -74,9 +59,8 @@ export const MarketCaptureAlphaCard = ({ fund }: { fund: any }) => {
         
         {/* Up/Down Capture Columns */}
         <div className="flex flex-col gap-3">
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-1 gap-3">
             <CaptureColumn title="vs Nifty 50" up={niftyUp} down={niftyDown} ratio={niftyRatio} />
-            <CaptureColumn title="vs Sector" up={sectorUp} down={sectorDown} ratio={sectorRatio} />
           </div>
           <div className="text-[10px] text-text-secondary leading-relaxed bg-white/5 p-2 rounded border border-border border-dashed">
             <span className="font-semibold text-text-primary">Insight:</span> An upcapture to downcapture ratio &gt; 1 indicates the fund consistently beats the reference.

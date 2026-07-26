@@ -32,8 +32,8 @@ def main():
     total_value = 0
     
     try:
-        stocks_resp = requests.get("http://localhost:8000/api/stocks").json()
-        mfs_resp = requests.get("http://localhost:8000/api/mutual_funds?limit=2000").json()
+        stocks_resp = requests.get("http://localhost:8080/api/stocks").json()
+        mfs_resp = requests.get("http://localhost:8080/api/mutual_funds?limit=2000").json()
         all_stocks = {s["slug"]: s for s in stocks_resp}
         all_mfs = {m["scheme_code"] if m.get("scheme_code") else m.get("direct_search_id"): m for m in mfs_resp.get("data", [])}
     except Exception as e:

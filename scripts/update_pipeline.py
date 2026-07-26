@@ -120,7 +120,7 @@ def main():
         # Step 10: Backend Reload
         print("\nStep 10: Signaling backend reload...")
         admin_token = get_admin_token()
-        req = urllib.request.Request("http://127.0.0.1:8000/api/admin/reload_db", method="POST")
+        req = urllib.request.Request("http://127.0.0.1:8080/api/admin/reload_db", method="POST")
         req.add_header("X-Admin-Token", admin_token)
         try:
             with urllib.request.urlopen(req, timeout=30) as response:

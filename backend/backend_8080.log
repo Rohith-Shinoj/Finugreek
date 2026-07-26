@@ -2,3 +2,144 @@ INFO:     Started server process [19825]
 INFO:     Waiting for application startup.
 INFO:     Application startup complete.
 INFO:     Uvicorn running on http://0.0.0.0:8080 (Press CTRL+C to quit)
+INFO:     2401:4900:8fe9:b93:4160:1726:9003:2590:0 - "GET /api/stocks/state-bank-of-india HTTP/1.1" 200 OK
+INFO:     2401:4900:8fe9:b93:4160:1726:9003:2590:0 - "GET /api/stocks/maruti-suzuki-india-ltd HTTP/1.1" 200 OK
+INFO:     2401:4900:8fe9:b93:4160:1726:9003:2590:0 - "GET /api/search_index HTTP/1.1" 200 OK
+INFO:     2401:4900:8fe9:b93:4160:1726:9003:2590:0 - "GET /api/stocks/maruti-suzuki-india-ltd/related HTTP/1.1" 200 OK
+INFO:     2401:4900:8fe9:b93:4160:1726:9003:2590:0 - "GET /api/quotes/live/maruti-suzuki-india-ltd HTTP/1.1" 200 OK
+INFO:     2401:4900:8fe9:b93:4160:1726:9003:2590:0 - "GET /api/stocks/maruti-suzuki-india-ltd HTTP/1.1" 200 OK
+News empty in DB, fetching live news for maruti-suzuki-india-ltd (MARUTI)...
+INFO:     2401:4900:8fe9:b93:4160:1726:9003:2590:0 - "GET /api/news/maruti-suzuki-india-ltd HTTP/1.1" 200 OK
+INFO:     2401:4900:8fe9:b93:4160:1726:9003:2590:0 - "GET /api/stocks?client=%5Bobject+Object%5D&queryKey%5B%5D=allStocks&signal=%5Bobject+AbortSignal%5D HTTP/1.1" 200 OK
+INFO:     2401:4900:8fe9:b93:4160:1726:9003:2590:0 - "GET /api/stocks/maruti-suzuki-india-ltd/targets HTTP/1.1" 200 OK
+INFO:     2401:4900:8fe9:b93:4160:1726:9003:2590:0 - "GET /api/macro HTTP/1.1" 200 OK
+INFO:     2401:4900:8fe9:b93:4160:1726:9003:2590:0 - "GET /api/landing_widgets HTTP/1.1" 200 OK
+INFO:     2401:4900:8fe9:b93:4160:1726:9003:2590:0 - "GET /api/stocks/hindustan-unilever-ltd HTTP/1.1" 200 OK
+INFO:     2401:4900:8fe9:b93:4160:1726:9003:2590:0 - "GET /api/stocks/larsen-toubro-ltd HTTP/1.1" 200 OK
+INFO:     2401:4900:8fe9:b93:4160:1726:9003:2590:0 - "OPTIONS /api/stocks/batch HTTP/1.1" 200 OK
+INFO:     2401:4900:8fe9:b93:4160:1726:9003:2590:0 - "GET /api/stocks/tata-consultancy-services-ltd HTTP/1.1" 200 OK
+INFO:     2401:4900:8fe9:b93:4160:1726:9003:2590:0 - "POST /api/stocks/batch HTTP/1.1" 200 OK
+INFO:     2401:4900:8fe9:b93:4160:1726:9003:2590:0 - "GET /api/stocks/bajaj-finance-ltd HTTP/1.1" 200 OK
+INFO:     2401:4900:8fe9:b93:4160:1726:9003:2590:0 - "GET /api/stocks/bharti-airtel-ltd HTTP/1.1" 200 OK
+INFO:     2401:4900:8fe9:b93:4160:1726:9003:2590:0 - "GET /api/stocks/hdfc-bank-ltd HTTP/1.1" 200 OK
+INFO:     2401:4900:8fe9:b93:4160:1726:9003:2590:0 - "OPTIONS /api/quotes/refresh-batch HTTP/1.1" 200 OK
+INFO:     2401:4900:8fe9:b93:4160:1726:9003:2590:0 - "GET /api/stocks/nifty HTTP/1.1" 200 OK
+INFO:     2401:4900:8fe9:b93:4160:1726:9003:2590:0 - "GET /api/stocks/reliance-industries-ltd HTTP/1.1" 200 OK
+INFO:     2401:4900:8fe9:b93:4160:1726:9003:2590:0 - "GET /api/stocks/life-insurance-corporation-of-india HTTP/1.1" 200 OK
+
+[BACKEND] Starting refresh-batch for 20 slugs: ['reliance-industries-ltd', 'bharti-airtel-ltd', 'hdfc-bank-ltd', 'icici-bank-ltd', 'state-bank-of-india', 'tata-consultancy-services-ltd', 'bajaj-finance-ltd', 'life-insurance-corporation-of-india', 'larsen-toubro-ltd', 'hindustan-unilever-ltd', 'nifty-metal', 'nifty-it', 'nifty', 'sp-bse-sensex', 'nifty-midcap', 'nifty-total-market-index', 'nifty-smallcap-100', 'nifty-bank', 'india-vix', 'multi-commodity-exchange-of-india-ltd']
+INFO:     2401:4900:8fe9:b93:4160:1726:9003:2590:0 - "GET /api/stocks/icici-bank-ltd HTTP/1.1" 200 OK
+[BACKEND] Finished refresh-batch. Took 1.26 seconds.
+
+INFO:     2401:4900:8fe9:b93:4160:1726:9003:2590:0 - "POST /api/quotes/refresh-batch HTTP/1.1" 200 OK
+INFO:     2401:4900:8fe9:b93:4160:1726:9003:2590:0 - "OPTIONS /api/admin/log HTTP/1.1" 200 OK
+
+[FRONTEND TRACE]:
+[0.0ms] Extracted 20 slugs
+[10233.7ms] fetchBatchLiveQuotes network call completed
+[0.4ms] landingWidgets cache update completed
+[0.2ms] Individual stockData cache updates completed
+[10234.3ms] Total frontend handleSyncMarket execution time
+
+INFO:     2401:4900:8fe9:b93:4160:1726:9003:2590:0 - "POST /api/admin/log HTTP/1.1" 200 OK
+INFO:     2401:4900:8840:3776:a0c3:a316:aff0:ec9a:0 - "GET /api/landing_widgets HTTP/1.1" 200 OK
+INFO:     2401:4900:8840:3776:a0c3:a316:aff0:ec9a:0 - "GET /api/macro HTTP/1.1" 200 OK
+INFO:     2401:4900:8840:3776:a0c3:a316:aff0:ec9a:0 - "GET /api/stocks/reliance-industries-ltd HTTP/1.1" 200 OK
+INFO:     2401:4900:8840:3776:a0c3:a316:aff0:ec9a:0 - "GET /api/stocks/hdfc-bank-ltd HTTP/1.1" 200 OK
+INFO:     2401:4900:8840:3776:a0c3:a316:aff0:ec9a:0 - "GET /api/stocks/bharti-airtel-ltd HTTP/1.1" 200 OK
+INFO:     2401:4900:8840:3776:a0c3:a316:aff0:ec9a:0 - "GET /api/stocks/icici-bank-ltd HTTP/1.1" 200 OK
+INFO:     2401:4900:8840:3776:a0c3:a316:aff0:ec9a:0 - "GET /api/stocks/tata-consultancy-services-ltd HTTP/1.1" 200 OK
+INFO:     2401:4900:8840:3776:a0c3:a316:aff0:ec9a:0 - "GET /api/stocks/state-bank-of-india HTTP/1.1" 200 OK
+INFO:     2401:4900:8840:3776:a0c3:a316:aff0:ec9a:0 - "GET /api/search_index HTTP/1.1" 200 OK
+INFO:     2401:4900:8840:3776:a0c3:a316:aff0:ec9a:0 - "GET /api/stocks/hindustan-unilever-ltd HTTP/1.1" 200 OK
+INFO:     2401:4900:8840:3776:a0c3:a316:aff0:ec9a:0 - "GET /api/stocks/nifty HTTP/1.1" 200 OK
+INFO:     2401:4900:8840:3776:a0c3:a316:aff0:ec9a:0 - "OPTIONS /api/quotes/refresh-batch HTTP/1.1" 200 OK
+INFO:     2401:4900:8840:3776:a0c3:a316:aff0:ec9a:0 - "OPTIONS /api/stocks/batch HTTP/1.1" 200 OK
+INFO:     2401:4900:8840:3776:a0c3:a316:aff0:ec9a:0 - "GET /api/stocks/bajaj-finance-ltd HTTP/1.1" 200 OK
+INFO:     2401:4900:8840:3776:a0c3:a316:aff0:ec9a:0 - "POST /api/stocks/batch HTTP/1.1" 200 OK
+INFO:     2401:4900:8840:3776:a0c3:a316:aff0:ec9a:0 - "GET /api/stocks/larsen-toubro-ltd HTTP/1.1" 200 OK
+INFO:     2401:4900:8840:3776:a0c3:a316:aff0:ec9a:0 - "GET /api/stocks/life-insurance-corporation-of-india HTTP/1.1" 200 OK
+
+[BACKEND] Starting refresh-batch for 20 slugs: ['reliance-industries-ltd', 'bharti-airtel-ltd', 'hdfc-bank-ltd', 'icici-bank-ltd', 'state-bank-of-india', 'tata-consultancy-services-ltd', 'bajaj-finance-ltd', 'life-insurance-corporation-of-india', 'larsen-toubro-ltd', 'hindustan-unilever-ltd', 'nifty-metal', 'nifty-it', 'nifty', 'sp-bse-sensex', 'nifty-midcap', 'nifty-total-market-index', 'nifty-smallcap-100', 'nifty-bank', 'india-vix', 'multi-commodity-exchange-of-india-ltd']
+[BACKEND] Finished refresh-batch. Took 2.16 seconds.
+
+INFO:     2401:4900:8840:3776:a0c3:a316:aff0:ec9a:0 - "POST /api/quotes/refresh-batch HTTP/1.1" 200 OK
+INFO:     2401:4900:8840:3776:a0c3:a316:aff0:ec9a:0 - "OPTIONS /api/admin/log HTTP/1.1" 200 OK
+
+[FRONTEND TRACE]:
+[0.1ms] Extracted 20 slugs
+[12587.5ms] fetchBatchLiveQuotes network call completed
+[1.1ms] landingWidgets cache update completed
+[1.3ms] Individual stockData cache updates completed
+[12590.0ms] Total frontend handleSyncMarket execution time
+
+INFO:     2401:4900:8840:3776:a0c3:a316:aff0:ec9a:0 - "POST /api/admin/log HTTP/1.1" 200 OK
+INFO:     2401:4900:8840:3776:a0c3:a316:aff0:ec9a:0 - "GET /api/mutual_funds?limit=100&sort_by=aum&sort_order=desc HTTP/1.1" 200 OK
+INFO:     2401:4900:8840:3776:a0c3:a316:aff0:ec9a:0 - "OPTIONS /api/screener/stocks HTTP/1.1" 200 OK
+INFO:     2401:4900:8840:3776:a0c3:a316:aff0:ec9a:0 - "POST /api/screener/stocks HTTP/1.1" 200 OK
+INFO:     2401:4900:8840:3776:a0c3:a316:aff0:ec9a:0 - "GET /api/stocks?limit=1000 HTTP/1.1" 200 OK
+INFO:     2401:4900:8840:3776:a0c3:a316:aff0:ec9a:0 - "GET /api/stocks/state-bank-of-india/related HTTP/1.1" 200 OK
+INFO:     2401:4900:8840:3776:a0c3:a316:aff0:ec9a:0 - "GET /api/stocks/state-bank-of-india HTTP/1.1" 200 OK
+INFO:     2401:4900:8840:3776:a0c3:a316:aff0:ec9a:0 - "GET /api/stocks/icici-prudential-asset-management-company-ltd HTTP/1.1" 200 OK
+News empty in DB, fetching live news for state-bank-of-india (SBIN)...
+INFO:     2401:4900:8840:3776:a0c3:a316:aff0:ec9a:0 - "GET /api/news/state-bank-of-india HTTP/1.1" 200 OK
+INFO:     2401:4900:8840:3776:a0c3:a316:aff0:ec9a:0 - "GET /api/quotes/live/state-bank-of-india HTTP/1.1" 200 OK
+INFO:     2401:4900:8840:3776:a0c3:a316:aff0:ec9a:0 - "GET /api/stocks/icici-prudential-asset-management-company-ltd/related HTTP/1.1" 200 OK
+INFO:     2401:4900:8840:3776:a0c3:a316:aff0:ec9a:0 - "GET /api/stocks/icici-prudential-asset-management-company-ltd HTTP/1.1" 200 OK
+INFO:     2401:4900:8840:3776:a0c3:a316:aff0:ec9a:0 - "GET /api/stocks/state-bank-of-india/targets HTTP/1.1" 200 OK
+News empty in DB, fetching live news for icici-prudential-asset-management-company-ltd (ICICIAMC)...
+INFO:     2401:4900:8840:3776:a0c3:a316:aff0:ec9a:0 - "GET /api/news/icici-prudential-asset-management-company-ltd HTTP/1.1" 200 OK
+INFO:     2401:4900:8840:3776:a0c3:a316:aff0:ec9a:0 - "GET /api/quotes/live/icici-prudential-asset-management-company-ltd HTTP/1.1" 200 OK
+INFO:     2401:4900:8840:3776:a0c3:a316:aff0:ec9a:0 - "GET /api/stocks/icici-prudential-asset-management-company-ltd/targets HTTP/1.1" 200 OK
+
+[BACKEND] Starting refresh-batch for 20 slugs: ['reliance-industries-ltd', 'bharti-airtel-ltd', 'hdfc-bank-ltd', 'icici-bank-ltd', 'state-bank-of-india', 'tata-consultancy-services-ltd', 'bajaj-finance-ltd', 'life-insurance-corporation-of-india', 'larsen-toubro-ltd', 'hindustan-unilever-ltd', 'nifty-metal', 'nifty-it', 'nifty', 'sp-bse-sensex', 'nifty-midcap', 'nifty-total-market-index', 'nifty-smallcap-100', 'nifty-bank', 'india-vix', 'multi-commodity-exchange-of-india-ltd']
+[BACKEND] Finished refresh-batch. Took 0.73 seconds.
+
+INFO:     2401:4900:8840:3776:a0c3:a316:aff0:ec9a:0 - "POST /api/quotes/refresh-batch HTTP/1.1" 200 OK
+
+[FRONTEND TRACE]:
+[0.0ms] Extracted 20 slugs
+[1153.5ms] fetchBatchLiveQuotes network call completed
+[0.3ms] landingWidgets cache update completed
+[0.3ms] Individual stockData cache updates completed
+[1154.1ms] Total frontend handleSyncMarket execution time
+
+INFO:     2401:4900:8840:3776:a0c3:a316:aff0:ec9a:0 - "POST /api/admin/log HTTP/1.1" 200 OK
+
+Welcome to KDB-X Community Edition!
+For Community support, please visit https://kx.com/slack
+Tutorials can be found at https://github.com/KxSystems/tutorials
+Ready to go beyond the Community Edition? Email preview@kx.com
+
+[KDBPool] Connected to RDB
+INFO:     2401:4900:8840:3776:a0c3:a316:aff0:ec9a:0 - "GET /api/crypto/trades/BTCUSDT?n=100 HTTP/1.1" 200 OK
+[KDBPool] Query failed: Query timed out
+INFO:     2401:4900:8840:3776:a0c3:a316:aff0:ec9a:0 - "GET /api/crypto/stats/BTCUSDT HTTP/1.1" 503 Service Unavailable
+INFO:     2401:4900:8840:3776:a0c3:a316:aff0:ec9a:0 - "GET /api/crypto/ohlc/BTCUSDT?bar=1m HTTP/1.1" 503 Service Unavailable
+INFO:     2401:4900:8840:3776:a0c3:a316:aff0:ec9a:0 - "GET /api/crypto/stats/BTCUSDT HTTP/1.1" 503 Service Unavailable
+INFO:     2401:4900:8840:3776:a0c3:a316:aff0:ec9a:0 - "GET /api/crypto/orderbook/BTCUSDT HTTP/1.1" 503 Service Unavailable
+INFO:     2401:4900:8840:3776:a0c3:a316:aff0:ec9a:0 - "GET /api/crypto/status HTTP/1.1" 200 OK
+INFO:     2401:4900:8840:3776:a0c3:a316:aff0:ec9a:0 - "WebSocket /ws/crypto" [accepted]
+INFO:     connection open
+INFO:     2401:4900:8840:3776:a0c3:a316:aff0:ec9a:0 - "GET /api/crypto/ohlc/BTCUSDT?bar=1m HTTP/1.1" 503 Service Unavailable
+INFO:     2401:4900:8840:3776:a0c3:a316:aff0:ec9a:0 - "GET /api/crypto/orderbook/BTCUSDT HTTP/1.1" 503 Service Unavailable
+INFO:     2401:4900:8840:3776:a0c3:a316:aff0:ec9a:0 - "GET /api/crypto/status HTTP/1.1" 200 OK
+INFO:     2401:4900:8840:3776:a0c3:a316:aff0:ec9a:0 - "GET /api/crypto/status HTTP/1.1" 200 OK
+INFO:     connection closed
+[KDBPool] Connected to RDB
+INFO:     2401:4900:8840:3776:a0c3:a316:aff0:ec9a:0 - "GET /api/crypto/status HTTP/1.1" 200 OK
+INFO:     2401:4900:8840:3776:a0c3:a316:aff0:ec9a:0 - "GET /api/stocks?limit=1000 HTTP/1.1" 200 OK
+INFO:     2401:4900:8840:3776:a0c3:a316:aff0:ec9a:0 - "GET /api/search_index HTTP/1.1" 200 OK
+INFO:     2401:4900:8840:3776:a0c3:a316:aff0:ec9a:0 - "GET /api/stocks?limit=1000 HTTP/1.1" 200 OK
+INFO:     2401:4900:8840:3776:a0c3:a316:aff0:ec9a:0 - "GET /api/crypto/ohlc/BTCUSDT?bar=1m HTTP/1.1" 200 OK
+INFO:     2401:4900:8840:3776:a0c3:a316:aff0:ec9a:0 - "GET /api/crypto/trades/BTCUSDT?n=100 HTTP/1.1" 200 OK
+INFO:     2401:4900:8840:3776:a0c3:a316:aff0:ec9a:0 - "GET /api/crypto/status HTTP/1.1" 200 OK
+INFO:     2401:4900:8840:3776:a0c3:a316:aff0:ec9a:0 - "GET /api/crypto/orderbook/BTCUSDT HTTP/1.1" 200 OK
+INFO:     2401:4900:8840:3776:a0c3:a316:aff0:ec9a:0 - "GET /api/crypto/stats/BTCUSDT HTTP/1.1" 200 OK
+INFO:     2401:4900:8840:3776:a0c3:a316:aff0:ec9a:0 - "WebSocket /ws/crypto" [accepted]
+INFO:     connection open
+INFO:     2401:4900:8840:3776:a0c3:a316:aff0:ec9a:0 - "GET /api/crypto/status HTTP/1.1" 200 OK
+INFO:     connection closed
+INFO:     2401:4900:8840:3776:a0c3:a316:aff0:ec9a:0 - "GET /api/search_index HTTP/1.1" 200 OK
+INFO:     2401:4900:8840:3776:a0c3:a316:aff0:ec9a:0 - "GET /api/stocks?limit=1000 HTTP/1.1" 200 OK
+INFO:     2a09:bac5:3e0c:16aa::242:9e:0 - "GET /api/stocks?limit=1000 HTTP/1.1" 200 OK

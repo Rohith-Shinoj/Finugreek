@@ -42,7 +42,7 @@ export const TopNavigation = () => {
     { name: 'Mutual Funds', path: '/mutual-funds', icon: <LineChart size={16} /> },
     { name: 'Screen', path: '/screener', icon: <Search size={16} /> },
     { name: 'Crypto', path: '/crypto', icon: <Zap size={16} /> },
-    { name: 'Watchlists', path: '/watchlists', icon: <Notebook size={16} /> },
+    // { name: 'Watchlists', path: '/watchlists', icon: <Notebook size={16} /> },
     { name: 'Pairs Trading', path: '/pairs', icon: <LineChart size={16} /> },
     { name: 'Portfolio Analyzer', path: '/portfolio', icon: <Briefcase size={16} /> }  ];
 
@@ -111,7 +111,7 @@ export const TopNavigation = () => {
         //   </div>
         // )
 
-        
+
         // no need the isAdmin toggle for now, just show the Ask AI button for all users
           <Link 
             to="/ai-research"

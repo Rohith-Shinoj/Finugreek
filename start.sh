@@ -16,8 +16,8 @@ mkdir -p "$LOG_DIR" "$PID_DIR" "$BASE_DIR/tickdb/logs" "$BASE_DIR/tickdb/hdb"
 # Ensure KDB-X is in PATH (from the new installer location)
 export PATH="$HOME/.kx/bin:$PATH"
 
-# Logging macro: change to 1 to enable by default, or pass --log
-LOGGING_MACRO=0
+# Logging macro: set to 1 to enable by default
+LOGGING_MACRO=1
 
 # Parse flags
 NO_KDB=false
@@ -107,14 +107,14 @@ if [ "$NO_FEED" = false ] && [ "$NO_KDB" = false ]; then
 fi
 
 # ── Start FastAPI ───────────────────────────────────────────
-log "Starting FastAPI on port 8000..."
+log "Starting FastAPI on port 8080..."
 cd "$BASE_DIR/backend"
-uvicorn main:app --host 0.0.0.0 --port 8000 >> "$LOG_DIR/backend.log" 2>&1 &
+uvicorn main:app --host 0.0.0.0 --port 8080 >> "$LOG_DIR/backend.log" 2>&1 &
 echo $! > "$PID_DIR/uvicorn.pid"
 
 log "═══════════════════════════════════════"
 log "  Finugreek Backend Started"
-log "  API:       http://localhost:8000"
+log "  API:       http://localhost:8080"
 log "  Dashboard: http://localhost:5173"
 log "  Crypto:    http://localhost:5173/crypto"
 log "  Logs:      $LOG_DIR/backend.log"

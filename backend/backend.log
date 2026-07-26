@@ -53,3 +53,146 @@ INFO:     127.0.0.1:60884 - "POST /api/screener/stocks HTTP/1.1" 200 OK
 INFO:     127.0.0.1:61226 - "GET /api/stocks?client=%5Bobject+Object%5D&queryKey%5B%5D=allStocks&signal=%5Bobject+AbortSignal%5D HTTP/1.1" 200 OK
 INFO:     127.0.0.1:61228 - "GET /api/stocks?client=%5Bobject+Object%5D&queryKey%5B%5D=allStocks&signal=%5Bobject+AbortSignal%5D HTTP/1.1" 200 OK
 INFO:     127.0.0.1:61228 - "GET /api/search_index HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61303 - "GET /api/landing_widgets HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61303 - "GET /api/stocks/reliance-industries-ltd HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61304 - "GET /api/macro HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61307 - "GET /api/stocks/bharti-airtel-ltd HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61303 - "GET /api/stocks/state-bank-of-india HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61308 - "GET /api/stocks/hdfc-bank-ltd HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61303 - "OPTIONS /api/quotes/refresh-batch HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61304 - "GET /api/stocks/tata-consultancy-services-ltd HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61307 - "GET /api/stocks/bajaj-finance-ltd HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61310 - "GET /api/stocks/icici-bank-ltd HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61304 - "GET /api/stocks/larsen-toubro-ltd HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61307 - "GET /api/stocks/hindustan-unilever-ltd HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61308 - "GET /api/stocks/life-insurance-corporation-of-india HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61312 - "OPTIONS /api/stocks/batch HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61303 - "GET /api/stocks/nifty HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61312 - "POST /api/stocks/batch HTTP/1.1" 200 OK
+
+[BACKEND] Starting refresh-batch for 20 slugs: ['reliance-industries-ltd', 'bharti-airtel-ltd', 'hdfc-bank-ltd', 'icici-bank-ltd', 'state-bank-of-india', 'tata-consultancy-services-ltd', 'bajaj-finance-ltd', 'life-insurance-corporation-of-india', 'larsen-toubro-ltd', 'hindustan-unilever-ltd', 'nifty-metal', 'nifty-it', 'nifty', 'sp-bse-sensex', 'nifty-midcap', 'nifty-total-market-index', 'nifty-smallcap-100', 'nifty-bank', 'india-vix', 'multi-commodity-exchange-of-india-ltd']
+[BACKEND] Finished refresh-batch. Took 1.10 seconds.
+
+INFO:     127.0.0.1:61310 - "POST /api/quotes/refresh-batch HTTP/1.1" 200 OK
+INFO:     127.0.0.1:61310 - "OPTIONS /api/admin/log HTTP/1.1" 200 OK
+
+[FRONTEND TRACE]:
+[0.0ms] Extracted 20 slugs
+[11223.7ms] fetchBatchLiveQuotes network call completed
+[0.9ms] landingWidgets cache update completed
+[0.5ms] Individual stockData cache updates completed
+[11225.1ms] Total frontend handleSyncMarket execution time
+
+INFO:     127.0.0.1:61310 - "POST /api/admin/log HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63542 - "GET /api/landing_widgets HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63542 - "GET /api/stocks/reliance-industries-ltd HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63543 - "GET /api/macro HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63546 - "GET /api/stocks/bharti-airtel-ltd HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63542 - "GET /api/stocks/tata-consultancy-services-ltd HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63548 - "GET /api/stocks/hdfc-bank-ltd HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63542 - "GET /api/stocks/larsen-toubro-ltd HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63543 - "GET /api/stocks/bajaj-finance-ltd HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63546 - "GET /api/stocks/life-insurance-corporation-of-india HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63550 - "GET /api/stocks/icici-bank-ltd HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63542 - "GET /api/stocks/nifty HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63543 - "OPTIONS /api/stocks/batch HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63546 - "OPTIONS /api/quotes/refresh-batch HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63548 - "GET /api/stocks/hindustan-unilever-ltd HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63552 - "GET /api/stocks/state-bank-of-india HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63546 - "POST /api/stocks/batch HTTP/1.1" 200 OK
+
+[BACKEND] Starting refresh-batch for 20 slugs: ['reliance-industries-ltd', 'bharti-airtel-ltd', 'hdfc-bank-ltd', 'icici-bank-ltd', 'state-bank-of-india', 'tata-consultancy-services-ltd', 'bajaj-finance-ltd', 'life-insurance-corporation-of-india', 'larsen-toubro-ltd', 'hindustan-unilever-ltd', 'nifty-metal', 'nifty-it', 'nifty', 'sp-bse-sensex', 'nifty-midcap', 'nifty-total-market-index', 'nifty-smallcap-100', 'nifty-bank', 'india-vix', 'multi-commodity-exchange-of-india-ltd']
+INFO:     127.0.0.1:63550 - "GET /api/search_index HTTP/1.1" 200 OK
+[BACKEND] Finished refresh-batch. Took 3.32 seconds.
+
+INFO:     127.0.0.1:63543 - "POST /api/quotes/refresh-batch HTTP/1.1" 200 OK
+INFO:     127.0.0.1:63907 - "OPTIONS /api/admin/log HTTP/1.1" 200 OK
+
+[FRONTEND TRACE]:
+[0.0ms] Extracted 20 slugs
+[16081.0ms] fetchBatchLiveQuotes network call completed
+[25.9ms] landingWidgets cache update completed
+[104.3ms] Individual stockData cache updates completed
+[16211.5ms] Total frontend handleSyncMarket execution time
+
+INFO:     127.0.0.1:63907 - "POST /api/admin/log HTTP/1.1" 200 OK
+
+Welcome to KDB-X Community Edition!
+For Community support, please visit https://kx.com/slack
+Tutorials can be found at https://github.com/KxSystems/tutorials
+Ready to go beyond the Community Edition? Email preview@kx.com
+
+[KDBPool] Connected to RDB
+INFO:     127.0.0.1:52577 - "GET /api/crypto/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52627 - "WebSocket /ws/crypto" [accepted]
+INFO:     connection open
+INFO:     connection closed
+[KDBPool] Query failed: Query timed out
+[KDBPool] Connected to RDB
+[KDBPool] Query failed: Query timed out
+INFO:     127.0.0.1:52945 - "GET /api/crypto/trades/BTCUSDT?n=100 HTTP/1.1" 503 Service Unavailable
+INFO:     127.0.0.1:52947 - "GET /api/crypto/ohlc/BTCUSDT?bar=1m HTTP/1.1" 503 Service Unavailable
+INFO:     127.0.0.1:52950 - "GET /api/crypto/orderbook/BTCUSDT HTTP/1.1" 503 Service Unavailable
+INFO:     127.0.0.1:52951 - "GET /api/crypto/stats/BTCUSDT HTTP/1.1" 503 Service Unavailable
+INFO:     127.0.0.1:52953 - "GET /api/crypto/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52955 - "WebSocket /ws/crypto" [accepted]
+INFO:     connection closed
+INFO:     127.0.0.1:52957 - "WebSocket /ws/crypto" [accepted]
+INFO:     connection open
+INFO:     127.0.0.1:52953 - "GET /api/crypto/trades/BTCUSDT?n=100 HTTP/1.1" 503 Service Unavailable
+INFO:     127.0.0.1:52951 - "GET /api/crypto/ohlc/BTCUSDT?bar=1m HTTP/1.1" 503 Service Unavailable
+INFO:     127.0.0.1:52950 - "GET /api/crypto/orderbook/BTCUSDT HTTP/1.1" 503 Service Unavailable
+INFO:     127.0.0.1:52953 - "GET /api/crypto/stats/BTCUSDT HTTP/1.1" 503 Service Unavailable
+INFO:     127.0.0.1:52953 - "GET /api/crypto/trades/ETHUSDT?n=100 HTTP/1.1" 503 Service Unavailable
+INFO:     127.0.0.1:52950 - "GET /api/crypto/ohlc/ETHUSDT?bar=1m HTTP/1.1" 503 Service Unavailable
+INFO:     127.0.0.1:52951 - "GET /api/crypto/orderbook/ETHUSDT HTTP/1.1" 503 Service Unavailable
+INFO:     127.0.0.1:52947 - "GET /api/crypto/stats/ETHUSDT HTTP/1.1" 503 Service Unavailable
+INFO:     127.0.0.1:52945 - "GET /api/crypto/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52961 - "WebSocket /ws/crypto" [accepted]
+INFO:     connection open
+INFO:     connection closed
+INFO:     127.0.0.1:52947 - "GET /api/crypto/ohlc/ETHUSDT?bar=1m HTTP/1.1" 503 Service Unavailable
+INFO:     127.0.0.1:52945 - "GET /api/crypto/trades/ETHUSDT?n=100 HTTP/1.1" 503 Service Unavailable
+INFO:     127.0.0.1:52951 - "GET /api/crypto/orderbook/ETHUSDT HTTP/1.1" 503 Service Unavailable
+INFO:     127.0.0.1:52950 - "GET /api/crypto/stats/ETHUSDT HTTP/1.1" 503 Service Unavailable
+INFO:     127.0.0.1:52951 - "GET /api/crypto/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:52973 - "GET /api/crypto/status HTTP/1.1" 200 OK
+[KDBPool] Connected to RDB
+INFO:     127.0.0.1:53116 - "GET /api/crypto/status HTTP/1.1" 200 OK
+[KDBPool] Connected to RDB
+INFO:     127.0.0.1:53137 - "GET /api/crypto/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53142 - "GET /api/crypto/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53162 - "GET /api/crypto/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53166 - "GET /api/crypto/status HTTP/1.1" 200 OK
+INFO:     connection closed
+INFO:     127.0.0.1:53166 - "GET /api/crypto/ohlc/BTCUSDT?bar=1m HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53170 - "GET /api/crypto/trades/BTCUSDT?n=100 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53172 - "WebSocket /ws/crypto" [accepted]
+INFO:     127.0.0.1:53173 - "GET /api/crypto/orderbook/BTCUSDT HTTP/1.1" 200 OK
+INFO:     connection open
+INFO:     127.0.0.1:53174 - "GET /api/crypto/stats/BTCUSDT HTTP/1.1" 200 OK
+INFO:     connection closed
+INFO:     127.0.0.1:53174 - "GET /api/crypto/trades/SOLUSDT?n=100 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53173 - "GET /api/crypto/ohlc/SOLUSDT?bar=1m HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53170 - "GET /api/crypto/orderbook/SOLUSDT HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53166 - "GET /api/crypto/stats/SOLUSDT HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53176 - "WebSocket /ws/crypto" [accepted]
+INFO:     connection open
+INFO:     127.0.0.1:53170 - "GET /api/crypto/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53256 - "GET /api/crypto/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53320 - "WebSocket /ws/crypto" [accepted]
+INFO:     connection open
+INFO:     127.0.0.1:53324 - "GET /api/crypto/ohlc/ETHUSDT?bar=1m HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53325 - "GET /api/crypto/trades/ETHUSDT?n=100 HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53327 - "GET /api/crypto/orderbook/ETHUSDT HTTP/1.1" 200 OK
+INFO:     connection closed
+INFO:     127.0.0.1:53328 - "GET /api/crypto/stats/ETHUSDT HTTP/1.1" 200 OK
+INFO:     connection closed
+INFO:     127.0.0.1:53335 - "WebSocket /ws/crypto" [accepted]
+INFO:     connection open
+INFO:     127.0.0.1:53328 - "GET /api/crypto/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53776 - "GET /api/crypto/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53820 - "GET /api/crypto/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:53894 - "GET /api/crypto/status HTTP/1.1" 200 OK
+INFO:     127.0.0.1:54432 - "GET /api/crypto/status HTTP/1.1" 200 OK
+INFO:     connection closed

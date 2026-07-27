@@ -40,6 +40,7 @@ search_index_cache = TTLCache(maxsize=10, ttl=300)
 macro_cache = TTLCache(maxsize=10, ttl=300)
 stock_detail_cache = TTLCache(maxsize=1000, ttl=300)
 etf_detail_cache = TTLCache(maxsize=500, ttl=300)
+nifty_benchmark_cache = TTLCache(maxsize=5, ttl=600)
 
 def clear_all_api_caches():
     landing_widgets_cache.clear()
@@ -47,6 +48,18 @@ def clear_all_api_caches():
     macro_cache.clear()
     stock_detail_cache.clear()
     etf_detail_cache.clear()
+    nifty_benchmark_cache.clear()
+
+def get_cached_nifty_ohlcv(con):
+    if "nifty" in nifty_benchmark_cache:
+        return nifty_benchmark_cache["nifty"]
+    try:
+        nifty_result = con.execute("SELECT absolute_data->>'$.OHLCV' FROM stocks WHERE slug = 'nifty'").fetchone()
+        nifty_ohlcv = json.loads(nifty_result[0]) if nifty_result and nifty_result[0] else []
+        nifty_benchmark_cache["nifty"] = nifty_ohlcv
+        return nifty_ohlcv
+    except Exception:
+        return []
 
 app = FastAPI(title="Quant Dashboard API")
 
@@ -224,7 +237,7 @@ def refresh_batch(req: BatchRefreshRequest):
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
     })
     
-    with ThreadPoolExecutor(max_workers=32) as executor:
+    with ThreadPoolExecutor(max_workers=4) as executor:
         futures = {executor.submit(fetch_live_quote, slug, session): slug for slug in req.slugs}
         for future in as_completed(futures):
             res = future.result()
@@ -431,9 +444,8 @@ async def get_stock(slug: str):
         abs_data = json.loads(result[0]) if result[0] else {}
         rel_data = json.loads(result[1]) if result[1] else {}
         
-        # Fetch Nifty 50 OHLCV for benchmark overlay
-        nifty_result = con.execute("SELECT absolute_data->>'$.OHLCV' FROM stocks WHERE slug = 'nifty'").fetchone()
-        nifty_ohlcv = json.loads(nifty_result[0]) if nifty_result and nifty_result[0] else []
+        # Fetch Nifty 50 OHLCV for benchmark overlay (cached)
+        nifty_ohlcv = get_cached_nifty_ohlcv(con)
         
         res = {
             "slug": slug, 

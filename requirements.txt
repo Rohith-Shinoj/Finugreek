@@ -22,7 +22,6 @@ shap
 spacy
 statsmodels
 tavily-python
-torch
 tqdm
 urllib3
 uvicorn

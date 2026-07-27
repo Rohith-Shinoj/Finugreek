@@ -1324,12 +1324,12 @@ def get_fast_market_breadth(active_buffer_path):
                     close,
                     AVG(close) OVER (
                         PARTITION BY slug 
-                        ORDER BY strptime(dt, '%d-%m-%Y') 
+                        ORDER BY coalesce(try_cast(dt as DATE), try_strptime(dt, '%d-%m-%Y')) 
                         ROWS BETWEEN 49 PRECEDING AND CURRENT ROW
                     ) as sma50,
                     ROW_NUMBER() OVER (
                         PARTITION BY slug 
-                        ORDER BY strptime(dt, '%d-%m-%Y')
+                        ORDER BY coalesce(try_cast(dt as DATE), try_strptime(dt, '%d-%m-%Y'))
                     ) as rn
                 FROM extracted
             )

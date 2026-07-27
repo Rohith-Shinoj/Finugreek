@@ -1,8 +1,8 @@
 beautifulsoup4
+cachetools
 duckdb
 fastapi
 google-api-core
-hmmlearn
 httpx
 joblib
 langchain-community
@@ -18,10 +18,9 @@ python-dotenv
 requests
 scikit-learn
 scipy
-shap
-spacy
 statsmodels
 tavily-python
 tqdm
 urllib3
 uvicorn
+websockets

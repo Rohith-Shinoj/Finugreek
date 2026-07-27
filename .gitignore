@@ -5,3 +5,7 @@ test_*
 *.json
 *.txt
 *.log
+scripts/sync_to_vps.sh
+.pids/
+.DS_Store
+logs/*

@@ -3,7 +3,7 @@ import os
 import sys
 import time
 import socket
-import select
+import signal
 import tty
 import termios
 import subprocess
@@ -17,22 +17,33 @@ PID_DIR = os.path.join(BASE_DIR, ".pids")
 os.makedirs(LOG_DIR, exist_ok=True)
 os.makedirs(PID_DIR, exist_ok=True)
 
-# Log file paths
+# Log files
 UVICORN_LOG = os.path.join(LOG_DIR, "uvicorn.log")
 CLOUDFLARED_LOG = os.path.join(LOG_DIR, "cloudflared.log")
 KDB_LOG = os.path.join(LOG_DIR, "kdb.log")
 PIPELINE_LOG = os.path.join(LOG_DIR, "update_pipeline.log")
+
+# PID files
+UVICORN_PID = os.path.join(PID_DIR, "uvicorn.pid")
+CLOUDFLARED_PID = os.path.join(PID_DIR, "cloudflared.pid")
+KDB_TP_PID = os.path.join(PID_DIR, "tickerplant.pid")
+KDB_RDB_PID = os.path.join(PID_DIR, "rdb.pid")
+FEED_PID = os.path.join(PID_DIR, "feed.pid")
 
 # System State
 state = {
     "running": True,
     "last_error": None,
     "selected_idx": 0,
-    "current_view": "menu"  # "menu", "logs", "pipeline", "terminal"
+    "uvicorn_status": "OFFLINE",
+    "cloudflared_status": "OFFLINE",
+    "kdb_status": "OFFLINE"
 }
 
 MENU_OPTIONS = [
     "Main Status & Health Monitor",
+    "Start / Restart All Daemons",
+    "Stop All Daemons",
     "Cloudflared Logs",
     "Uvicorn Logs",
     "kdb+ Logs",
@@ -41,12 +52,131 @@ MENU_OPTIONS = [
     "Exit"
 ]
 
-def check_port(host, port, timeout=1.0):
+def load_env_token():
+    """Parses CLOUDFLARE_TUNNEL_TOKEN or CLOUDFLARE_TOKEN from .env file."""
+    env_path = os.path.join(BASE_DIR, ".env")
+    if not os.path.exists(env_path):
+        return None
+    try:
+        with open(env_path, "r") as f:
+            for line in f:
+                line = line.strip()
+                if line.startswith("#") or not line or "=" not in line:
+                    continue
+                k, v = line.split("=", 1)
+                k = k.strip()
+                v = v.strip().strip("'").strip('"')
+                if k in ["CLOUDFLARE_TUNNEL_TOKEN", "CLOUDFLARE_TOKEN", "TUNNEL_TOKEN"]:
+                    return v
+    except Exception:
+        pass
+    return None
+
+def check_port(host, port, timeout=0.5):
     try:
         with socket.create_connection((host, port), timeout=timeout):
             return True
     except (socket.timeout, ConnectionRefusedError, OSError):
         return False
+
+def is_pid_running(pid_file):
+    if not os.path.exists(pid_file):
+        return False
+    try:
+        with open(pid_file, "r") as f:
+            pid = int(f.read().strip())
+        os.kill(pid, 0)
+        return True
+    except Exception:
+        return False
+
+def kill_pid(pid_file):
+    if os.path.exists(pid_file):
+        try:
+            with open(pid_file, "r") as f:
+                pid = int(f.read().strip())
+            os.kill(pid, signal.SIGTERM)
+            time.sleep(0.3)
+            if is_pid_running(pid_file):
+                os.kill(pid, signal.SIGKILL)
+        except Exception:
+            pass
+        try:
+            os.remove(pid_file)
+        except Exception:
+            pass
+
+def stop_all_daemons():
+    kill_pid(UVICORN_PID)
+    kill_pid(CLOUDFLARED_PID)
+    kill_pid(KDB_TP_PID)
+    kill_pid(KDB_RDB_PID)
+    kill_pid(FEED_PID)
+
+def start_uvicorn_daemon():
+    if is_pid_running(UVICORN_PID) or check_port("127.0.0.1", 8080):
+        return
+    backend_dir = os.path.join(BASE_DIR, "backend")
+    f_log = open(UVICORN_LOG, "a")
+    cmd = ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080", "--reload"]
+    proc = subprocess.Popen(cmd, cwd=backend_dir, stdout=f_log, stderr=f_log, preexec_fn=os.setsid)
+    with open(UVICORN_PID, "w") as f:
+        f.write(str(proc.pid))
+
+def start_cloudflared_daemon():
+    if is_pid_running(CLOUDFLARED_PID):
+        return
+    token = load_env_token()
+    if not token:
+        with open(CLOUDFLARED_LOG, "a") as f:
+            f.write(f"[{datetime.now()}] ERROR: CLOUDFLARE_TUNNEL_TOKEN not found in .env file\n")
+        return
+    f_log = open(CLOUDFLARED_LOG, "a")
+    cmd = ["cloudflared", "tunnel", "run", "--protocol", "http2", "--token", token]
+    proc = subprocess.Popen(cmd, cwd=BASE_DIR, stdout=f_log, stderr=f_log, preexec_fn=os.setsid)
+    with open(CLOUDFLARED_PID, "w") as f:
+        f.write(str(proc.pid))
+
+def start_kdb_daemons():
+    tickdb_dir = os.path.join(BASE_DIR, "tickdb")
+    f_log = open(KDB_LOG, "a")
+    
+    # Check if q is available
+    q_bin = subprocess.run(["which", "q"], capture_output=True, text=True)
+    if q_bin.returncode != 0:
+        f_log.write(f"[{datetime.now()}] WARNING: q (kdb+) binary not found in PATH. Skipping kdb+.\n")
+        f_log.close()
+        return
+
+    # 1. Tickerplant (5010)
+    if not is_pid_running(KDB_TP_PID) and not check_port("127.0.0.1", 5010):
+        tp_cmd = ["q", "tick.q", "-p", "5010"]
+        proc_tp = subprocess.Popen(tp_cmd, cwd=tickdb_dir, stdout=f_log, stderr=f_log, preexec_fn=os.setsid)
+        with open(KDB_TP_PID, "w") as f:
+            f.write(str(proc_tp.pid))
+        time.sleep(1)
+
+    # 2. RDB (5011)
+    if not is_pid_running(KDB_RDB_PID) and not check_port("127.0.0.1", 5011):
+        rdb_cmd = ["q", "r.q", "-p", "5011"]
+        proc_rdb = subprocess.Popen(rdb_cmd, cwd=tickdb_dir, stdout=f_log, stderr=f_log, preexec_fn=os.setsid)
+        with open(KDB_RDB_PID, "w") as f:
+            f.write(str(proc_rdb.pid))
+        time.sleep(1)
+
+    # 3. Binance Feed Handler
+    if not is_pid_running(FEED_PID):
+        feed_py = os.path.join(BASE_DIR, "tickdb", "feed.py")
+        if os.path.exists(feed_py):
+            feed_cmd = [sys.executable, feed_py]
+            proc_feed = subprocess.Popen(feed_cmd, cwd=BASE_DIR, stdout=f_log, stderr=f_log, preexec_fn=os.setsid)
+            with open(FEED_PID, "w") as f:
+                f.write(str(proc_feed.pid))
+
+def start_all_daemons():
+    start_uvicorn_daemon()
+    start_cloudflared_daemon()
+    start_kdb_daemons()
 
 def get_active_dataset_info():
     active_link = os.path.join(BASE_DIR, "datasets", "active")
@@ -55,7 +185,6 @@ def get_active_dataset_info():
     try:
         target = os.readlink(active_link)
         folder_name = os.path.basename(target)
-        # Extract timestamp pattern if present e.g. run_YYYYMMDD_HHMMSS
         if folder_name.startswith("run_"):
             raw_ts = folder_name.replace("run_", "")
             try:
@@ -66,7 +195,6 @@ def get_active_dataset_info():
         else:
             formatted_ts = "Custom Snapshot"
         
-        # Check parquet size
         parquet_path = os.path.join(BASE_DIR, "datasets", folder_name, "market_data.parquet")
         if os.path.exists(parquet_path):
             size_mb = os.path.getsize(parquet_path) / (1024 * 1024)
@@ -78,18 +206,25 @@ def get_active_dataset_info():
     except Exception as e:
         return "Error reading dataset", str(e)
 
-def monitor_logs_for_errors():
-    """Background thread to monitor daemon logs for explicit errors."""
+def monitor_loop():
+    """Background thread to monitor services, ensure daemons are alive, and scan logs for errors."""
     log_files = [UVICORN_LOG, CLOUDFLARED_LOG, KDB_LOG]
     for log_path in log_files:
         if not os.path.exists(log_path):
             open(log_path, 'a').close()
             
-    # Track file positions
     positions = {log_path: os.path.getsize(log_path) for log_path in log_files}
     
+    # Auto-start daemons on launcher launch
+    start_all_daemons()
+    
     while state["running"]:
-        time.sleep(1)
+        # Update Service Statuses
+        state["uvicorn_status"] = "ONLINE" if check_port("127.0.0.1", 8080) else "OFFLINE"
+        state["cloudflared_status"] = "ONLINE" if is_pid_running(CLOUDFLARED_PID) or subprocess.run(["pgrep", "-f", "cloudflared"], capture_output=True).returncode == 0 else "OFFLINE"
+        state["kdb_status"] = "ONLINE" if check_port("127.0.0.1", 5010) else "OFFLINE"
+        
+        # Scan log files for error lines
         for log_path in log_files:
             try:
                 if not os.path.exists(log_path):
@@ -104,21 +239,19 @@ def monitor_logs_for_errors():
                     for line in new_lines:
                         line_lower = line.lower()
                         if "error" in line_lower or "exception" in line_lower or "traceback" in line_lower:
-                            # Capture last critical error line
                             service_name = os.path.basename(log_path).replace('.log', '').upper()
-                            state["last_error"] = f"[{service_name} ERROR] {line.strip()[:100]}"
+                            state["last_error"] = f"[{service_name} ERROR] {line.strip()[:90]}"
             except Exception:
                 pass
+        time.sleep(1)
 
 def get_key():
-    """Reads a single keypress without requiring enter."""
     fd = sys.stdin.fileno()
     old_settings = termios.tcgetattr(fd)
     try:
         tty.setraw(fd)
         ch = sys.stdin.read(1)
         if ch == '\x1b':
-            # Handle arrow keys
             ch2 = sys.stdin.read(1)
             ch3 = sys.stdin.read(1)
             if ch2 == '[':
@@ -139,41 +272,45 @@ def get_key():
         termios.tcsetattr(fd, termios.TCSADRAIN, old_settings)
 
 def render_ui():
-    sys.stdout.write("\033[H\033[J") # Clear screen
-    sys.stdout.flush()
-    
     dataset_name, dataset_ts = get_active_dataset_info()
-    uvicorn_ok = check_port("127.0.0.1", 8080)
-    kdb_ok = check_port("127.0.0.1", 5010)
+    all_online = (state["uvicorn_status"] == "ONLINE" and state["cloudflared_status"] == "ONLINE")
     
-    print("================================================================================")
-    print("                      FINUGREEK SYSTEM MASTER CONTROL                           ")
-    print("================================================================================")
-    print(f" Active Dataset : {dataset_name}")
-    print(f" Last Updated   : {dataset_ts}")
-    print("--------------------------------------------------------------------------------")
-    print(" SERVICE STATUS :")
-    print(f"   FastAPI Backend (8080) : [{'ONLINE' if uvicorn_ok else 'OFFLINE'}]")
-    print(f"   kdb+ Engine     (5010) : [{'ONLINE' if kdb_ok else 'OFFLINE/SKIPPED'}]")
-    print("--------------------------------------------------------------------------------")
+    buf = []
+    buf.append("\033[1;1H") # Cursor home
+    buf.append("================================================================================\033[K\n")
+    buf.append("                      FINUGREEK SYSTEM MASTER CONTROL                           \033[K\n")
+    buf.append("================================================================================\033[K\n")
+    buf.append(f" Active Dataset : {dataset_name}\033[K\n")
+    buf.append(f" Last Updated   : {dataset_ts}\033[K\n")
+    buf.append("--------------------------------------------------------------------------------\033[K\n")
+    buf.append(" SERVICE DAEMON COMMANDS & STATUS :\033[K\n")
+    buf.append(f"   FastAPI Backend (8080) [uvicorn main:app --reload]      : [{state['uvicorn_status']}]\033[K\n")
+    buf.append(f"   Cloudflare Tunnel      [cloudflared tunnel run --token]  : [{state['cloudflared_status']}]\033[K\n")
+    buf.append(f"   kdb+ Engine     (5010) [q tick.q -p 5010]                : [{state['kdb_status']}]\033[K\n")
+    buf.append("--------------------------------------------------------------------------------\033[K\n")
     
     if state["last_error"]:
-        print(f" ALERT: {state['last_error']}")
-        print("--------------------------------------------------------------------------------")
+        buf.append(f" ALERT: {state['last_error']}\033[K\n")
+        buf.append("--------------------------------------------------------------------------------\033[K\n")
+    elif not all_online:
+        buf.append(" SYSTEM HEALTH : [ATTENTION] 1 or more required daemons are OFFLINE\033[K\n")
+        buf.append("--------------------------------------------------------------------------------\033[K\n")
     else:
-        print(" SYSTEM HEALTH : All Daemons Operating Normally")
-        print("--------------------------------------------------------------------------------")
+        buf.append(" SYSTEM HEALTH : All Daemons Operating Normally\033[K\n")
+        buf.append("--------------------------------------------------------------------------------\033[K\n")
         
-    print("\n SELECT ACTION (Use Up/Down Arrow Keys and press Enter):\n")
+    buf.append("\n SELECT ACTION (Use Up/Down Arrow Keys and press Enter):\033[K\n\n")
     
     for idx, option in enumerate(MENU_OPTIONS):
         if idx == state["selected_idx"]:
-            print(f"  > [ {option.upper()} ]")
+            buf.append(f"  > [ {option.upper()} ]\033[K\n")
         else:
-            print(f"    {option}")
+            buf.append(f"    {option}\033[K\n")
             
-    print("\n================================================================================")
-    print(" Press Ctrl+C at any time to exit control script.")
+    buf.append("\n================================================================================\033[K\n")
+    buf.append(" Press Ctrl+C at any time to exit control script.\033[K\n")
+    
+    sys.stdout.write("".join(buf))
     sys.stdout.flush()
 
 def view_log_file(log_filename, title):
@@ -185,28 +322,30 @@ def view_log_file(log_filename, title):
     if os.path.exists(log_path):
         with open(log_path, 'r', errors='ignore') as f:
             lines = f.readlines()
-            for line in lines[-25:]: # Show last 25 lines
+            for line in lines[-25:]:
                 print(line.rstrip())
     else:
         print("Log file is empty or does not exist yet.")
     print("--------------------------------------------------------------------------------")
     print("\nPress any key to return to main menu...")
     get_key()
+    sys.stdout.write("\033[H\033[J")
 
 def run_update_pipeline():
     sys.stdout.write("\033[H\033[J")
     print("=================== DATA UPDATE PIPELINE ===================")
-    print("Executing ./scripts/update_data.sh --force ...\n")
-    script_path = os.path.join(BASE_DIR, "scripts", "update_data.sh")
+    print("Executing python3 ./scripts/update_pipeline.py --force ...\n")
+    script_path = os.path.join(BASE_DIR, "scripts", "update_pipeline.py")
     if not os.path.exists(script_path):
         print(f"Error: {script_path} not found.")
         print("\nPress any key to return...")
         get_key()
+        sys.stdout.write("\033[H\033[J")
         return
         
     try:
         proc = subprocess.Popen(
-            [script_path, "--force"],
+            [sys.executable, script_path, "--force"],
             cwd=BASE_DIR,
             stdout=subprocess.PIPE,
             stderr=subprocess.STDOUT,
@@ -225,17 +364,22 @@ def run_update_pipeline():
         
     print("\nPress any key to return to main menu...")
     get_key()
+    sys.stdout.write("\033[H\033[J")
 
 def open_subshell():
     sys.stdout.write("\033[H\033[J")
     print("=================== INTERACTIVE SUBSHELL ===================")
-    print("Dropping into bash. Type 'exit' to return to control menu.\n")
+    print("Dropping into bash shell. Type 'exit' to return to control menu.\n")
     sys.stdout.flush()
     subprocess.run(["/bin/bash"], cwd=BASE_DIR)
+    sys.stdout.write("\033[H\033[J")
 
 def main():
-    # Start background error monitoring thread
-    monitor_thread = threading.Thread(target=monitor_logs_for_errors, daemon=True)
+    sys.stdout.write("\033[H\033[J")
+    sys.stdout.flush()
+    
+    # Start background process supervisor & monitor
+    monitor_thread = threading.Thread(target=monitor_loop, daemon=True)
     monitor_thread.start()
     
     try:
@@ -249,7 +393,13 @@ def main():
             elif key == 'ENTER':
                 choice = MENU_OPTIONS[state["selected_idx"]]
                 if choice == "Main Status & Health Monitor":
-                    state["last_error"] = None # Clear alert
+                    state["last_error"] = None
+                elif choice == "Start / Restart All Daemons":
+                    stop_all_daemons()
+                    time.sleep(1)
+                    start_all_daemons()
+                elif choice == "Stop All Daemons":
+                    stop_all_daemons()
                 elif choice == "Cloudflared Logs":
                     view_log_file("cloudflared.log", "Cloudflared Tunnel")
                 elif choice == "Uvicorn Logs":

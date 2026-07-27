@@ -149,7 +149,32 @@ def reload_db(token: str = Depends(verify_admin_token)):
 class BatchRefreshRequest(BaseModel):
     slugs: list[str]
 
+quote_cache = TTLCache(maxsize=500, ttl=60)
+
 def fetch_live_quote(slug: str, session: requests.Session):
+    if slug in quote_cache:
+        return quote_cache[slug]
+        
+    # 1. First priority: Fast local DuckDB lookup (0.5ms)
+    try:
+        con = get_db()
+        with db_lock:
+            r = con.execute("SELECT close, day_change, day_change_perc FROM stocks WHERE slug = ?", (slug,)).fetchone()
+            if not r:
+                r = con.execute("SELECT price, dayChange, dayChangePerc FROM etfs WHERE slug = ?", (slug,)).fetchone()
+        if r and r[0] is not None:
+            data = {
+                "slug": slug,
+                "currentPrice": float(r[0]),
+                "dayChange": float(r[1]) if r[1] is not None else 0.0,
+                "dayChangePerc": float(r[2]) if r[2] is not None else 0.0
+            }
+            quote_cache[slug] = data
+            return data
+    except Exception:
+        pass
+
+    # 2. Last priority: Fallback external web scraping with tight 2s timeout
     KNOWN_INDICES = ["nifty", "india-vix", "sp-bse-sensex", "nifty-smallcap-100", "nifty-midcap", "nifty-total-market-index", "nifty-metal", "nifty-it", "nifty-bank"]
     try:
         if slug in KNOWN_INDICES:
@@ -161,10 +186,9 @@ def fetch_live_quote(slug: str, session: requests.Session):
             
         headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
-            'Accept-Language': 'en-US,en;q=0.9'
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
         }
-        html = session.get(url, headers=headers, timeout=10).text
+        html = session.get(url, headers=headers, timeout=2).text
         import re
         match = re.search(r'<script id="__NEXT_DATA__"[^>]*>(.*?)</script>', html, re.DOTALL)
         if match:
@@ -190,7 +214,6 @@ def fetch_live_quote(slug: str, session: requests.Session):
                         break
                 quote = best_quote if best_quote else list(live_price.values())[0]
                 
-            # For indices, fallback to checking indexData
             if not quote and slug in KNOWN_INDICES:
                 index_data = props.get("indexData", {})
                 header = index_data.get("header", {})
@@ -202,14 +225,16 @@ def fetch_live_quote(slug: str, session: requests.Session):
                     }
                 
             if quote:
-                return {
+                res = {
                     "slug": slug,
                     "currentPrice": quote.get("ltp"),
                     "dayChange": quote.get("dayChange"),
                     "dayChangePerc": quote.get("dayChangePerc")
                 }
+                quote_cache[slug] = res
+                return res
     except Exception as e:
-        print(f"[BACKEND] fetch_live_quote error for {slug}: {e}")
+        pass
     return None
 
 @app.get("/api/quotes/live/{slug}")

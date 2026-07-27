@@ -102,8 +102,8 @@ class KDBPool:
 
 def offline_response(detail: str = "kdb+ is not running"):
     return JSONResponse(
-        status_code=503,
-        content={"status": "offline", "detail": detail}
+        status_code=200,
+        content={"status": "offline", "data": [], "detail": detail}
     )
 
 

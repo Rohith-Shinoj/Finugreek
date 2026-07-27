@@ -465,8 +465,11 @@ def metrics_meta(registry: dict, table: str) -> list:
 # ────────────────────────────────────────────────────────────────────────────
 #  STOCK SCREENER ENDPOINT
 # ────────────────────────────────────────────────────────────────────────────
+@router.get("/api/screener/stocks")
 @router.post("/api/screener/stocks")
-def screen_stocks(req: ScreenerRequest):
+def screen_stocks(req: ScreenerRequest = None):
+    if req is None:
+        req = ScreenerRequest()
     try:
         con = get_con()
         always = [
@@ -501,8 +504,11 @@ def screen_stocks(req: ScreenerRequest):
 # ────────────────────────────────────────────────────────────────────────────
 #  MUTUAL FUND SCREENER ENDPOINT
 # ────────────────────────────────────────────────────────────────────────────
+@router.get("/api/screener/mutual-funds")
 @router.post("/api/screener/mutual-funds")
-def screen_mf(req: ScreenerRequest):
+def screen_mf(req: ScreenerRequest = None):
+    if req is None:
+        req = ScreenerRequest()
     try:
         con = get_con()
         always = [
@@ -586,8 +592,11 @@ ETF_METRICS: dict[str, tuple] = {
 # ─────────────────────────────────────────────────────────────────────────────
 #  ETF SCREENER ENDPOINT
 # ─────────────────────────────────────────────────────────────────────────────
+@router.get("/api/screener/etfs")
 @router.post("/api/screener/etfs")
-def screen_etfs(req: ScreenerRequest):
+def screen_etfs(req: ScreenerRequest = None):
+    if req is None:
+        req = ScreenerRequest()
     try:
         con = get_con()
         always = [

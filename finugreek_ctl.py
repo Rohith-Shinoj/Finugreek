@@ -118,7 +118,7 @@ def start_uvicorn_daemon():
         return
     backend_dir = os.path.join(BASE_DIR, "backend")
     f_log = open(UVICORN_LOG, "a")
-    cmd = ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080", "--reload"]
+    cmd = ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080", "--workers", "4"]
     proc = subprocess.Popen(cmd, cwd=backend_dir, stdout=f_log, stderr=f_log, preexec_fn=os.setsid)
     with open(UVICORN_PID, "w") as f:
         f.write(str(proc.pid))

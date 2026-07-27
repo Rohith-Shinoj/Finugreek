@@ -33,6 +33,21 @@ from portfolio_api import router as portfolio_router
 from crypto_api import router as crypto_router
 from broker_scraper import fetch_broker_targets_from_mc
 
+from cachetools import TTLCache
+
+landing_widgets_cache = TTLCache(maxsize=10, ttl=300)
+search_index_cache = TTLCache(maxsize=10, ttl=300)
+macro_cache = TTLCache(maxsize=10, ttl=300)
+stock_detail_cache = TTLCache(maxsize=1000, ttl=300)
+etf_detail_cache = TTLCache(maxsize=500, ttl=300)
+
+def clear_all_api_caches():
+    landing_widgets_cache.clear()
+    search_index_cache.clear()
+    macro_cache.clear()
+    stock_detail_cache.clear()
+    etf_detail_cache.clear()
+
 app = FastAPI(title="Quant Dashboard API")
 
 app.add_middleware(
@@ -103,6 +118,7 @@ def reload_db(token: str = Depends(verify_admin_token)):
         
         # Clear cache
         _search_cache = []
+        clear_all_api_caches()
         
         # Re-initialize connection and view
         get_db()
@@ -278,6 +294,8 @@ def calculate_historical_returns(ohlcv_json_str: str):
 
 @app.get("/api/search_index")
 def get_search_index():
+    if "index" in search_index_cache:
+        return search_index_cache["index"]
     try:
         con = get_db()
         
@@ -294,6 +312,7 @@ def get_search_index():
         for r in mfs:
             results.append({"slug": r[0], "ticker": r[1], "name": r[2], "type": r[3]})
             
+        search_index_cache["index"] = results
         return results
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
@@ -400,6 +419,8 @@ def list_stocks(page: int = 1, limit: int = 50, category: str = None, sort_by: s
 
 @app.get("/api/stocks/{slug}")
 async def get_stock(slug: str):
+    if slug in stock_detail_cache:
+        return stock_detail_cache[slug]
     try:
         con = get_db()
         result = con.execute("SELECT absolute_data, relative_data FROM stocks WHERE slug = ?", (slug,)).fetchone()
@@ -414,12 +435,14 @@ async def get_stock(slug: str):
         nifty_result = con.execute("SELECT absolute_data->>'$.OHLCV' FROM stocks WHERE slug = 'nifty'").fetchone()
         nifty_ohlcv = json.loads(nifty_result[0]) if nifty_result and nifty_result[0] else []
         
-        return {
+        res = {
             "slug": slug, 
             "absolute": abs_data, 
             "relative": rel_data,
             "benchmark_ohlcv": nifty_ohlcv
         }
+        stock_detail_cache[slug] = res
+        return res
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -637,6 +660,8 @@ async def get_stocks_batch(req: BatchStockRequest):
 
 @app.get("/api/macro")
 def get_macro():
+    if "macro" in macro_cache:
+        return macro_cache["macro"]
     try:
         con = get_db()
         query = """
@@ -679,7 +704,7 @@ def get_macro():
             sectors = con.execute(sector_query).fetchall()
             absorption = con.execute(absorption_query).fetchall()
 
-        return {
+        res = {
             "regime": {
                 "nifty_trend": result[0] if result and result[0] is not None else 1.0,
                 "vix_intensity": result[1] if result and result[1] is not None else 1.0,
@@ -690,6 +715,8 @@ def get_macro():
             "sectors": [{"name": s[0], "inst_accum": s[1], "count": s[2], "rs_rating": s[3]} for s in sectors],
             "absorption": [{"slug": a[0], "ticker": a[1], "inst_accum": a[2], "retail_liq": a[3]} for a in absorption]
         }
+        macro_cache["macro"] = res
+        return res
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
@@ -1371,6 +1398,8 @@ def get_broker_targets(slug: str):
 
 @app.get("/api/landing_widgets")
 def get_landing_widgets():
+    if "widgets" in landing_widgets_cache:
+        return landing_widgets_cache["widgets"]
     try:
         con = get_db()
         with db_lock:
@@ -1392,7 +1421,7 @@ def get_landing_widgets():
             # Indices
             indices = con.execute("SELECT slug, ticker, name, market_cap, day_change FROM stocks WHERE slug IN ('nifty', 'sp-bse-sensex', 'india-vix', 'nifty-bank', 'nifty-it', 'nifty-metal', 'nifty-smallcap-100', 'nifty-midcap', 'nifty-total-market-index', 'multi-commodity-exchange-of-india-ltd')").fetchall()
 
-        return {
+        res = {
             "market_caps": [{"slug": r[0], "ticker": r[1], "name": r[2], "marketCap": r[3], "day_change": r[4], "pe_ratio": r[5]} for r in market_caps],
             "inst_accum": [{"slug": r[0], "ticker": r[1], "name": r[2], "inst_accum": r[3], "day_change": r[4], "marketCap": r[5]} for r in inst_accum],
             "rs_rating": [{"slug": r[0], "ticker": r[1], "name": r[2], "rs_rating": r[3], "day_change": r[4], "marketCap": r[5]} for r in rs_rating],
@@ -1400,5 +1429,7 @@ def get_landing_widgets():
             "top_etfs": [{"slug": r[0], "ticker": r[1], "name": r[2], "day_change": r[3], "marketCap": r[4]} for r in top_etfs],
             "indices": [{"slug": r[0], "ticker": r[1], "name": r[2], "marketCap": r[3], "day_change": r[4]} for r in indices]
         }
+        landing_widgets_cache["widgets"] = res
+        return res
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))

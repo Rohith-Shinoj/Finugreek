@@ -270,7 +270,7 @@ export const MarketHeatmap = () => {
             DEBUG: rootNode has 0 leaves!
           </div>
         )}
-        {rootNode && rootNode.children && rootNode.children.map((sectorNode, i) => {
+        {rootNode && rootNode.children && rootNode.children.map((sectorNode: any, i: number) => {
           return (
             <div key={`sector-${i}`} style={{ position: 'absolute', left: sectorNode.x0, top: sectorNode.y0, width: sectorNode.x1 - sectorNode.x0, height: sectorNode.y1 - sectorNode.y0, pointerEvents: 'none' }}>
               {/* Sector Header */}
@@ -293,7 +293,7 @@ export const MarketHeatmap = () => {
               )}
               
               {/* Leaves */}
-              {sectorNode.children && sectorNode.children.map((leafNode, j) => {
+              {sectorNode.children && sectorNode.children.map((leafNode: any, j: number) => {
                 const data = leafNode.data as any;
                 const width = leafNode.x1 - leafNode.x0;
                 const height = leafNode.y1 - leafNode.y0;

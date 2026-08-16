@@ -13,6 +13,26 @@ LOG_DIR="$BASE_DIR/logs"
 PID_DIR="$BASE_DIR/.pids"
 mkdir -p "$LOG_DIR" "$PID_DIR" "$BASE_DIR/tickdb/logs" "$BASE_DIR/tickdb/hdb"
 
+# ── Log Rotation ────────────────────────────────────────────
+rotate_log() {
+  local log_file=$1
+  local max_size=$2
+  if [ -f "$log_file" ]; then
+    local size=$(stat -c%s "$log_file" 2>/dev/null || stat -f%z "$log_file" 2>/dev/null)
+    if [ "$size" -ge "$max_size" ]; then
+      for i in 2 1; do
+        if [ -f "${log_file}.$i" ]; then
+          mv "${log_file}.$i" "${log_file}.$((i+1))"
+        fi
+      done
+      mv "$log_file" "${log_file}.1"
+    fi
+  fi
+}
+
+# Rotate backend.log if it exceeds 10MB (10485760 bytes)
+rotate_log "$LOG_DIR/backend.log" 10485760
+
 # Ensure KDB-X is in PATH (from the new installer location)
 export PATH="$HOME/.kx/bin:$PATH"
 

@@ -17,8 +17,14 @@ def init_db(target_dir):
     
     print(f"Generating Parquet at {parquet_path}...")
     
-    # Use an in-memory DuckDB for the conversion
-    con = duckdb.connect(":memory:")
+    # Use a temporary on-disk DuckDB for the conversion to prevent OOM
+    import gc
+    temp_db_path = os.path.join(target_dir, "temp_build.duckdb")
+    if os.path.exists(temp_db_path):
+        os.remove(temp_db_path)
+    con = duckdb.connect(temp_db_path)
+    con.execute("PRAGMA memory_limit='1GB'")
+    con.execute("PRAGMA temp_directory='./duckdb_temp_spill'")
     
     # Load slugs and data from JSONL shards
     abs_map = {}
@@ -125,6 +131,11 @@ def init_db(target_dir):
             
     if insert_data:
         con.executemany("INSERT INTO stocks_staging VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)", insert_data)
+            
+    # Force Garbage Collection of the massive JSON dicts before DuckDB starts window function calculations
+    del abs_map
+    del rel_map
+    gc.collect()
             
     import glob
     print("Calculating Global RS Ratings...")
@@ -308,6 +319,9 @@ def init_db(target_dir):
 
     print(f"Parquet and DuckDB generation complete.")
     con.close()
+    
+    if os.path.exists(temp_db_path):
+        os.remove(temp_db_path)
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Ingest JSON datasets and export to Parquet.")

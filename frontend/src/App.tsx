@@ -22,6 +22,11 @@ import { TerminalLayout } from './layouts/TerminalLayout';
 import { useAppStore } from './store';
 
 import { TopNavigation } from './components/TopNavigation';
+import { Footer } from './components/Footer';
+import { Terms } from './pages/Terms';
+import { Privacy } from './pages/Privacy';
+import { Disclaimer } from './pages/Disclaimer';
+import { NotFound } from './pages/NotFound';
 // Layout Component
 const Layout = () => {
   return (
@@ -29,6 +34,7 @@ const Layout = () => {
       <TopNavigation />
       <main className="flex-1 overflow-auto flex flex-col min-h-0 relative">
         <Outlet />
+        <Footer />
       </main>
     </div>
   );
@@ -56,6 +62,12 @@ function App() {
           <Route path="/etf/:slug" element={<ETFSnapshot />} />
 
           <Route path="/mutual-funds/:slug" element={<MutualFundSnapshot />} />
+          
+          <Route path="/terms" element={<Terms />} />
+          <Route path="/privacy" element={<Privacy />} />
+          <Route path="/disclaimer" element={<Disclaimer />} />
+          
+          <Route path="*" element={<NotFound />} />
         </Route>
       </Routes>
     </Router>

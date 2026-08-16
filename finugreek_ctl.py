@@ -113,11 +113,24 @@ def stop_all_daemons():
     kill_pid(KDB_RDB_PID)
     kill_pid(FEED_PID)
 
+def rotate_log(log_path, max_size=10*1024*1024, backups=3):
+    if os.path.exists(log_path) and os.path.getsize(log_path) > max_size:
+        for i in range(backups - 1, 0, -1):
+            s = f"{log_path}.{i}"
+            d = f"{log_path}.{i+1}"
+            if os.path.exists(s):
+                os.rename(s, d)
+        os.rename(log_path, f"{log_path}.1")
+
+def open_log(log_path):
+    rotate_log(log_path)
+    return open(log_path, "a")
+
 def start_uvicorn_daemon():
     if is_pid_running(UVICORN_PID) or check_port("127.0.0.1", 8080):
         return
     backend_dir = os.path.join(BASE_DIR, "backend")
-    f_log = open(UVICORN_LOG, "a")
+    f_log = open_log(UVICORN_LOG)
     cmd = ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080", "--workers", "4"]
     proc = subprocess.Popen(cmd, cwd=backend_dir, stdout=f_log, stderr=f_log, preexec_fn=os.setsid)
     with open(UVICORN_PID, "w") as f:
@@ -131,7 +144,7 @@ def start_cloudflared_daemon():
         with open(CLOUDFLARED_LOG, "a") as f:
             f.write(f"[{datetime.now()}] ERROR: CLOUDFLARE_TUNNEL_TOKEN not found in .env file\n")
         return
-    f_log = open(CLOUDFLARED_LOG, "a")
+    f_log = open_log(CLOUDFLARED_LOG)
     cmd = ["cloudflared", "tunnel", "run", "--protocol", "http2", "--token", token]
     proc = subprocess.Popen(cmd, cwd=BASE_DIR, stdout=f_log, stderr=f_log, preexec_fn=os.setsid)
     with open(CLOUDFLARED_PID, "w") as f:
@@ -139,7 +152,7 @@ def start_cloudflared_daemon():
 
 def start_kdb_daemons():
     tickdb_dir = os.path.join(BASE_DIR, "tickdb")
-    f_log = open(KDB_LOG, "a")
+    f_log = open_log(KDB_LOG)
     
     # Check if q is available
     q_bin = subprocess.run(["which", "q"], capture_output=True, text=True)

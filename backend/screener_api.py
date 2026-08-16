@@ -297,6 +297,10 @@ def reload_screener_db():
             except Exception:
                 pass
         _init_con()
+    # Clear all derived caches so stale data doesn't leak through
+    _string_options_cache.clear()
+    _metrics_meta_cache.clear()
+    _count_cache.clear()
 
 def nan_safe(obj):
     """Recursively replace NaN / Inf in nested structures for JSON safety."""
@@ -448,7 +452,12 @@ def get_string_options(col_name: str, table: str) -> list[str]:
     except Exception:
         return []
 
+# Cache for metrics_meta — registry never changes between requests, only on DB reload
+_metrics_meta_cache: dict = {}
+
 def metrics_meta(registry: dict, table: str) -> list:
+    if table in _metrics_meta_cache:
+        return _metrics_meta_cache[table]
     out = []
     for k, v in registry.items():
         m = {"key": k, "label": v[1], "group": v[2], "type": v[3]}
@@ -459,7 +468,21 @@ def metrics_meta(registry: dict, table: str) -> list:
         elif v[3] == "string":
             m["options"] = get_string_options(v[0], table)
         out.append(m)
+    _metrics_meta_cache[table] = out
     return out
+
+# Cache for COUNT(*) queries — keyed by (table, where_hash) with 60s TTL
+from cachetools import TTLCache as _TTLCache
+_count_cache = _TTLCache(maxsize=200, ttl=60)
+
+def _cached_count(con, count_sql: str, params: list) -> int:
+    import hashlib
+    key = hashlib.md5((count_sql + str(params)).encode()).hexdigest()
+    if key in _count_cache:
+        return _count_cache[key]
+    result = con.execute(count_sql, params).fetchone()[0]
+    _count_cache[key] = result
+    return result
 
 
 # ────────────────────────────────────────────────────────────────────────────
@@ -485,7 +508,7 @@ def screen_stocks(req: ScreenerRequest = None):
         df    = con.execute(main_sql,  params).df()
         df    = df.replace({np.nan: None, np.inf: None, -np.inf: None})
         data  = nan_safe(df.to_dict("records"))
-        count = con.execute(count_sql, params).fetchone()[0]
+        count = _cached_count(con, count_sql, params)
 
         return {
             "data": data,
@@ -524,7 +547,7 @@ def screen_mf(req: ScreenerRequest = None):
         df    = con.execute(main_sql,  params).df()
         df    = df.replace({np.nan: None, np.inf: None, -np.inf: None})
         data  = nan_safe(df.to_dict("records"))
-        count = con.execute(count_sql, params).fetchone()[0]
+        count = _cached_count(con, count_sql, params)
 
         return {
             "data": data,
@@ -611,7 +634,7 @@ def screen_etfs(req: ScreenerRequest = None):
         df    = con.execute(main_sql,  params).df()
         df    = df.replace({np.nan: None, np.inf: None, -np.inf: None})
         data  = nan_safe(df.to_dict("records"))
-        count = con.execute(count_sql, params).fetchone()[0]
+        count = _cached_count(con, count_sql, params)
 
         return {
             "data": data,

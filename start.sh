@@ -80,12 +80,27 @@ stop_existing() {
     if [ -f "$pidfile" ]; then
       pid=$(cat "$pidfile")
       if kill -0 "$pid" 2>/dev/null; then
-        kill "$pid" 2>/dev/null || true
+        kill -9 "$pid" 2>/dev/null || true
         log "Stopped process $pid ($(basename "$pidfile" .pid))"
       fi
       rm -f "$pidfile"
     fi
   done
+  # Kill any orphan q or feed or uvicorn or ctl processes matching ports 5010, 5011, 8080
+  pkill -9 -f "finugreek_ctl.py" 2>/dev/null || true
+  pkill -9 -f "5010" 2>/dev/null || true
+  pkill -9 -f "5011" 2>/dev/null || true
+  pkill -9 -f "8080" 2>/dev/null || true
+  pkill -9 -f "tick.q" 2>/dev/null || true
+  pkill -9 -f "r.q" 2>/dev/null || true
+  pkill -9 -f "feed.py" 2>/dev/null || true
+  pkill -9 -f "uvicorn" 2>/dev/null || true
+  if command -v fuser &> /dev/null; then
+    fuser -k -9 5010/tcp 2>/dev/null || true
+    fuser -k -9 5011/tcp 2>/dev/null || true
+    fuser -k -9 8080/tcp 2>/dev/null || true
+  fi
+  sleep 3
 }
 
 stop_existing
@@ -103,18 +118,29 @@ if [ "$NO_KDB" = false ]; then
 fi
 
 if [ "$NO_KDB" = false ]; then
-  log "Starting kdb+ Tickerplant on port 5010..."
   cd "$BASE_DIR/tickdb"
-  q tick.q -p 5010 >> "$LOG_DIR/backend.log" 2>&1 &
-  echo $! > "$PID_DIR/tickerplant.pid"
-  sleep 2
 
-  log "Starting kdb+ RDB on port 5011..."
-  q r.q -p 5011 >> "$LOG_DIR/backend.log" 2>&1 &
-  echo $! > "$PID_DIR/rdb.pid"
-  sleep 1
+  # 1. Tickerplant (5010)
+  if python3 -c "import socket; s=socket.socket(); s.connect(('127.0.0.1', 5010)); s.close()" 2>/dev/null; then
+    log "Port 5010 already active (Tickerplant running) ✓"
+  else
+    log "Starting kdb+ Tickerplant on port 5010..."
+    q tick.q -p 5010 >> "$LOG_DIR/backend.log" 2>&1 &
+    echo $! > "$PID_DIR/tickerplant.pid"
+    sleep 2
+  fi
 
-  log "kdb+ processes started ✓"
+  # 2. RDB (5011)
+  if python3 -c "import socket; s=socket.socket(); s.connect(('127.0.0.1', 5011)); s.close()" 2>/dev/null; then
+    log "Port 5011 already active (RDB running) ✓"
+  else
+    log "Starting kdb+ RDB on port 5011..."
+    q r.q -p 5011 >> "$LOG_DIR/backend.log" 2>&1 &
+    echo $! > "$PID_DIR/rdb.pid"
+    sleep 1
+  fi
+
+  log "kdb+ processes ready ✓"
 fi
 
 # ── Start Binance Feed Handler ──────────────────────────────
@@ -132,8 +158,32 @@ cd "$BASE_DIR/backend"
 uvicorn main:app --host 0.0.0.0 --port 8080 >> "$LOG_DIR/backend.log" 2>&1 &
 echo $! > "$PID_DIR/uvicorn.pid"
 
+sleep 3
+
+# ── Startup Health Verification ─────────────────────────────
+FAILED=false
+for pidfile in "$PID_DIR"/*.pid; do
+  if [ -f "$pidfile" ]; then
+    name=$(basename "$pidfile" .pid)
+    pid=$(cat "$pidfile")
+    if ! kill -0 "$pid" 2>/dev/null; then
+      echo -e "${RED}[ERROR] Service '$name' (PID $pid) crashed during startup!${NC}"
+      FAILED=true
+    fi
+  fi
+done
+
+if [ "$FAILED" = true ]; then
+  echo -e "${RED}══════════════════════════════════════════════════════${NC}"
+  echo -e "${RED}  STARTUP FAILED — RECENT LOG OUTPUT (${LOG_DIR}/backend.log):${NC}"
+  echo -e "${RED}══════════════════════════════════════════════════════${NC}"
+  tail -n 35 "$LOG_DIR/backend.log"
+  echo -e "${RED}══════════════════════════════════════════════════════${NC}"
+  exit 1
+fi
+
 log "═══════════════════════════════════════"
-log "  Finugreek Backend Started"
+log "  Finugreek Backend Started ✓"
 log "  API:       http://localhost:8080"
 log "  Dashboard: http://localhost:5173"
 log "  Crypto:    http://localhost:5173/crypto"

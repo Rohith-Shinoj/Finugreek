@@ -8,7 +8,7 @@
 / ── Configuration ───────────────────────────────────────────
 TP_HOST:`localhost;
 TP_PORT:5010i;
-HDB_DIR:hsym `$":",string[system"cd"],"/tickdb/hdb";
+HDB_DIR:hsym `$":",string[system"cd"],"/hdb";
 
 / ── Schema (must match tick.q) ──────────────────────────────
 trade:([]

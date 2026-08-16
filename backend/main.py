@@ -2,6 +2,7 @@ import os
 from fastapi import FastAPI, HTTPException, WebSocket, Header, Depends
 from fastapi.responses import JSONResponse, StreamingResponse, FileResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.middleware.gzip import GZipMiddleware
 import duckdb
 import json
 import numpy as np
@@ -41,6 +42,7 @@ macro_cache = TTLCache(maxsize=10, ttl=300)
 stock_detail_cache = TTLCache(maxsize=1000, ttl=300)
 etf_detail_cache = TTLCache(maxsize=500, ttl=300)
 nifty_benchmark_cache = TTLCache(maxsize=5, ttl=600)
+stocks_list_cache = TTLCache(maxsize=20, ttl=120)  # cache paginated stocks list
 
 def clear_all_api_caches():
     landing_widgets_cache.clear()
@@ -49,6 +51,7 @@ def clear_all_api_caches():
     stock_detail_cache.clear()
     etf_detail_cache.clear()
     nifty_benchmark_cache.clear()
+    stocks_list_cache.clear()
 
 def get_cached_nifty_ohlcv(con):
     if "nifty" in nifty_benchmark_cache:
@@ -62,6 +65,9 @@ def get_cached_nifty_ohlcv(con):
         return []
 
 app = FastAPI(title="Quant Dashboard API")
+
+# GZip compression — reduces JSON payloads by 70-85%
+app.add_middleware(GZipMiddleware, minimum_size=1000)
 
 app.add_middleware(
     CORSMiddleware,
@@ -359,15 +365,13 @@ def get_search_index():
 def list_stocks(page: int = 1, limit: int = 50, category: str = None, sort_by: str = "marketCap", sort_order: str = "desc"):
     try:
         con = get_db()
-        
+
         offset = (page - 1) * limit
-        
-        # Base query
+
         where_clause = ""
         params = []
-        
+
         if category:
-            # Map index names to limits or conditions if they don't explicitly exist in data
             if "Nifty 50 Index" in category:
                 limit = 50
             elif "Nifty Next 50" in category:
@@ -378,55 +382,46 @@ def list_stocks(page: int = 1, limit: int = 50, category: str = None, sort_by: s
             elif "Nifty 500" in category:
                 limit = 500
             elif category != "Entire Market":
-                # Fallback to industry/market_cap filter
                 where_clause = "WHERE industry ILIKE ? OR market_cap_type ILIKE ?"
                 params.extend([f"%{category}%", f"%{category}%"])
-                
-        # Total count for pagination
+
+        # Cache check — skip DB entirely for repeated navigations
+        cache_key = (page, limit, offset, category or "")
+        if cache_key in stocks_list_cache:
+            return stocks_list_cache[cache_key]
+
         count_query = f"SELECT COUNT(*) FROM stocks {where_clause}"
         with db_lock:
             total_count = con.execute(count_query, params).fetchone()[0]
-        
-        # Data query
+
+        # Push JSON extraction into DuckDB SQL — eliminates Python json.loads() per row
         query = f"""
-            SELECT 
-                slug, ticker, name, market_cap_type, market_cap, 
-                pe_ratio, day_change, industry, inst_accum, 
+            SELECT
+                slug, ticker, name, market_cap_type, market_cap,
+                pe_ratio, day_change, industry, inst_accum,
                 volatility_squeeze, rs_rating,
-                absolute_data,
-                relative_data
+                json_extract_string(absolute_data, '$."live price"') AS livePrice,
+                TRY_CAST(json_extract_string(absolute_data, '$.roe') AS DOUBLE) AS roe,
+                TRY_CAST(json_extract_string(relative_data, '$.price_returns.1w_return') AS DOUBLE) AS perf_1w,
+                TRY_CAST(json_extract_string(relative_data, '$.price_returns.1m_return') AS DOUBLE) AS perf_1m,
+                TRY_CAST(json_extract_string(relative_data, '$.price_returns.3m_return') AS DOUBLE) AS perf_3m,
+                TRY_CAST(json_extract_string(relative_data, '$.price_returns.6m_return') AS DOUBLE) AS perf_6m,
+                TRY_CAST(json_extract_string(relative_data, '$.price_returns.1y_return') AS DOUBLE) AS perf_1y,
+                TRY_CAST(json_extract_string(relative_data, '$.price_returns.ytd_return') AS DOUBLE) AS perf_ytd
             FROM stocks
             {where_clause}
             ORDER BY market_cap DESC
             LIMIT ? OFFSET ?
         """
-        
+
         with db_lock:
             result = con.execute(query, params + [limit, offset]).fetchall()
-        
+
         local_cache = []
         for r in result:
-            abs_str, rel_str = r[11], r[12]
-            abs_data = {}
-            rel_data = {}
-            if abs_str:
-                try: abs_data = json.loads(abs_str)
-                except: pass
-            if rel_str:
-                try: rel_data = json.loads(rel_str)
-                except: pass
-                
-            price_returns = rel_data.get("price_returns", {})
-            def get_ret(key):
-                try:
-                    val = price_returns.get(key)
-                    return float(val) if val is not None else 0.0
-                except:
-                    return 0.0
-                    
             local_cache.append({
-                "slug": r[0], 
-                "ticker": r[1], 
+                "slug": r[0],
+                "ticker": r[1],
                 "name": r[2],
                 "marketCapType": r[3],
                 "marketCap": r[4],
@@ -436,22 +431,19 @@ def list_stocks(page: int = 1, limit: int = 50, category: str = None, sort_by: s
                 "inst_accum": r[8],
                 "v_squeeze": r[9],
                 "rs_rating": r[10],
-                "livePrice": abs_data.get("live price"),
-                "roe": abs_data.get("roe", 0.0),
-                "perf_1w": get_ret("1w_return"),
-                "perf_1m": get_ret("1m_return"),
-                "perf_3m": get_ret("3m_return"),
-                "perf_6m": get_ret("6m_return"),
-                "perf_1y": get_ret("1y_return"),
-                "perf_ytd": get_ret("ytd_return")
+                "livePrice": r[11],
+                "roe": r[12] or 0.0,
+                "perf_1w": r[13] or 0.0,
+                "perf_1m": r[14] or 0.0,
+                "perf_3m": r[15] or 0.0,
+                "perf_6m": r[16] or 0.0,
+                "perf_1y": r[17] or 0.0,
+                "perf_ytd": r[18] or 0.0,
             })
-            
-        return {
-            "data": local_cache,
-            "total": total_count,
-            "page": page,
-            "limit": limit
-        }
+
+        result_payload = {"data": local_cache, "total": total_count, "page": page, "limit": limit}
+        stocks_list_cache[cache_key] = result_payload
+        return result_payload
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

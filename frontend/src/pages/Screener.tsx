@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import {
   SlidersHorizontal, Plus, X, Settings2, ChevronDown,
   Search, Layers, BarChart2, RefreshCw, TrendingUp, Info
@@ -185,7 +185,9 @@ export const Screener: React.FC = () => {
         throw new Error(err.detail || 'Screener API error');
       }
       return await res.json();
-    }
+    },
+    placeholderData: keepPreviousData, // keep previous results visible while new query loads
+    staleTime: 30_000, // 30s — avoid re-fetch if filters haven't changed
   });
 
   const results = queryData?.data ?? [];
@@ -244,7 +246,7 @@ export const Screener: React.FC = () => {
 
   // ─── Render ─────────────────────────────────────────────────────────────────
   return (
-    <div className="flex flex-col h-full bg-canvas text-text-primary overflow-hidden">
+    <div className="flex flex-col min-h-full bg-canvas text-text-primary">
 
       {/* ── TOP HEADER BAR ─────────────────────────────────────────────────── */}
       <div className="flex items-center gap-4 px-6 py-4 border-b border-border bg-surface shrink-0">
@@ -393,7 +395,7 @@ export const Screener: React.FC = () => {
       )}
 
       {/* ── TABLE AREA ─────────────────────────────────────────────────────── */}
-      <div className="flex-1 overflow-hidden">
+      <div className="flex-1">
         <ScreenerResultsTable
           data={results}
           isLoading={isLoading}

@@ -14,7 +14,7 @@ class Holding(BaseModel):
     type: str # 'STOCKS' or 'MUTUAL_FUNDS'
     units: float
     invested_amount: float
-    holding_value: float = 0.0  # Current market value entered by user
+    holding_value: float = 0.0  
 
 class Portfolio(BaseModel):
     holdings: List[Holding]

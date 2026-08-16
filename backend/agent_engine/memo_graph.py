@@ -2,8 +2,8 @@ from langgraph.prebuilt import create_react_agent
 from langchain_google_genai import ChatGoogleGenerativeAI
 from agent_engine.tools import query_quant_database, fetch_macro_context, execute_duckdb_query
 import os
-
-llm = ChatGoogleGenerativeAI(model="gemini-3.1-flash-lite", temperature=0.2)
+api_key = os.environ.get("GOOGLE_API_KEY") or os.environ.get("GEMINI_API_KEY") or "dummy_key_for_init"
+llm = ChatGoogleGenerativeAI(model="gemini-3.1-flash-lite", temperature=0.2, google_api_key=api_key)
 tools = [query_quant_database, fetch_macro_context, execute_duckdb_query]
 
 system_prompt = """You are an independent, all-purpose Financial AI Agent (Lead Portfolio Manager). You specialize in aggressive, un-diplomatic fundamental and technical teardowns.

@@ -45,9 +45,9 @@ logHandle:0Ni;
 
 / Initialize logging
 init:{[]
-  dir:hsym `$(system"cd"),"/logs";
-  logfile:` sv dir,`$string[.z.d],".log";
-  .u.logHandle:hopen logfile;
+  system"mkdir -p logs";
+  logfile:hsym `$"logs/",string[.z.d],".log";
+  .u.logHandle:@[hopen; logfile; {-1 "Log file error: ",x; 0Ni}];
   -1 "Tickerplant initialized. Log: ",string logfile;
  };
 
@@ -79,8 +79,8 @@ upd:{[t;x]
   ];
   / Update time column to now if it contains null timestamps
   if[any null x`time; x:update time:ts from x];
-  / Log to disk (append)
-  .u.logHandle enlist (`upd;t;x);
+  / Log to disk (append if logHandle is open)
+  if[not null .u.logHandle; .u.logHandle enlist (`upd;t;x)];
   / Publish to subscribers
   .u.pub[t;x];
   / Also insert into local copy for monitoring

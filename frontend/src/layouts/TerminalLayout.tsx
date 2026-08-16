@@ -56,14 +56,11 @@ export const TerminalLayout = () => {
   const isDelisted = stockData ? priceVal === 0 : false;
   
   return (
-    <div className="flex flex-col h-screen w-full bg-canvas text-text-primary overflow-hidden text-sm">
+    <div className="flex flex-col w-full bg-canvas text-text-primary text-sm">
       {/* Main Workspace (Panel Group) */}
-      <div className="flex-1 min-h-0 flex">
-        
-
-
+      <div className="w-full flex flex-col">
         {/* Resizable Grid */}
-        <div className="flex-1 w-full h-full relative">
+        <div className="w-full relative">
           <AIAssistantOverlay 
             ticker={abs?.ticker} 
             isOpen={isAIOverlayOpen} 
@@ -71,7 +68,7 @@ export const TerminalLayout = () => {
             displayName={abs?.name}
             internalPrompt={`Provide a verified expert investment breakdown for ${abs?.ticker} including Executive Analysis, Catalyst Path, Risk Asymmetry, and Execution Roadmap.`}
           />
-              <div className="w-full h-full flex flex-col overflow-y-auto bg-canvas custom-scrollbar p-6">
+              <div className="w-full flex flex-col bg-canvas p-6">
                 
                 {/* Central Canvas (Chart) */}
                 <div className="w-full min-h-[600px] flex flex-col relative shrink-0 mb-6">
@@ -80,15 +77,15 @@ export const TerminalLayout = () => {
                     <div className="w-full h-full min-h-[600px] rounded-xl bg-surface border border-border overflow-hidden flex flex-col">
                        <div className="h-16 border-b border-border/50 p-4 flex items-center justify-between">
                           <div className="flex gap-4">
-                            <Skeleton className="w-24 h-8 rounded" />
-                            <Skeleton className="w-24 h-8 rounded" />
+                             <Skeleton className="w-24 h-8 rounded" />
+                             <Skeleton className="w-24 h-8 rounded" />
                           </div>
                           <Skeleton className="w-32 h-8 rounded" />
                        </div>
                        <div className="flex-1 p-6 flex flex-col gap-4">
                           <div className="flex gap-4">
-                            <Skeleton className="w-48 h-20 rounded" />
-                            <Skeleton className="w-32 h-20 rounded" />
+                             <Skeleton className="w-48 h-20 rounded" />
+                             <Skeleton className="w-32 h-20 rounded" />
                           </div>
                           <Skeleton className="w-full flex-1 rounded" />
                        </div>
@@ -99,7 +96,7 @@ export const TerminalLayout = () => {
 
                 {/* Bottom Panel (Quantitative Analytics Grid) */}
                 {!isDelisted && (
-                  <div className="w-full min-h-[600px] flex flex-col shrink-0 pb-24">
+                  <div className="w-full min-h-[600px] flex flex-col shrink-0">
                     <div className="mb-6 flex items-center">
                       <div className="text-sm font-bold text-text-primary">
                         Quantitative Analytics Grid

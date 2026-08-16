@@ -4,7 +4,11 @@ import { fetchAllStocks } from '../api';
 import { Maximize, Grid, PieChart, ChevronDown, Flag } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { StockLogo } from '../components/StockLogo';
-import { treemap, hierarchy } from 'd3-hierarchy';
+// Vite native worker import — compiled separately and loaded on demand
+const createTreemapWorker = () => new Worker(
+  new URL('./treemapWorker.ts', import.meta.url),
+  { type: 'module' }
+);
 
 const parseDayChange = (changeStr: string) => {
   if (!changeStr) return 0;
@@ -69,9 +73,18 @@ export const MarketHeatmap = () => {
   const containerRef = useRef<HTMLDivElement>(null);
   const [hoveredNode, setHoveredNode] = useState<any>(null);
 
+  const indexLimit = useMemo(() => {
+    if (indexFilter === 'Nifty 50 Index') return 50;
+    if (indexFilter === 'Nifty Next 50 Index') return 100;
+    if (indexFilter === 'BSE Sensex') return 30;
+    if (indexFilter === 'Nifty 500 Index') return 500;
+    return 2000; // Entire Market — cap at 2000 for performance
+  }, [indexFilter]);
+
   const { data: stocks, isLoading } = useQuery({
-    queryKey: ['allStocks'],
-    queryFn: () => fetchAllStocks({ limit: 1000 }),
+    queryKey: ['allStocks', indexFilter],
+    queryFn: () => fetchAllStocks({ limit: indexLimit }),
+    staleTime: 5 * 60 * 1000, // 5 min — avoid re-fetch on filter toggle
   });
 
   useEffect(() => {
@@ -88,108 +101,36 @@ export const MarketHeatmap = () => {
     return () => observer.disconnect();
   }, [isLoading]);
 
-  const rootNode = useMemo(() => {
-    if (!stocks || dimensions.width === 0 || dimensions.height === 0) return null;
-    
-    // Size logic
-    const getSizeValue = (s: any) => {
-      if (sizeBy === 'Market Cap') return s.marketCap || 0;
-      if (sizeBy === 'Volume 1D') return s.volume || 0;
-      if (sizeBy === 'Volume 1W') return s.vol_1w || 0;
-      if (sizeBy === 'Volume 1M') return s.vol_1m || 0;
-      if (sizeBy === 'Price * Volume (Turnover) 1D') return s.turnover_1d || 0;
-      if (sizeBy === 'Price * Volume (Turnover) 1W') return s.turnover_1w || 0;
-      if (sizeBy === 'Price * Volume (Turnover) 1M') return s.turnover_1m || 0;
-      if (sizeBy === 'Mono size') return 1;
-      return 0;
+  // ── Web Worker for off-main-thread treemap layout ──────────────────────────
+  const workerRef = useRef<Worker | null>(null);
+  const [rootNode, setRootNode] = useState<any>(null);
+  const [isComputing, setIsComputing] = useState(false);
+
+  // Create worker once on mount
+  useEffect(() => {
+    const worker = createTreemapWorker();
+    workerRef.current = worker;
+    worker.onmessage = (e: MessageEvent) => {
+      setRootNode(e.data);
+      setIsComputing(false);
     };
+    return () => worker.terminate();
+  }, []);
 
-    // Color logic
-    const getColorValue = (s: any) => {
-      if (colorBy === 'Change 1D, %') return parseDayChange(s.day_change);
-      if (colorBy === 'Performance 1W, %') return s.perf_1w || 0;
-      if (colorBy === 'Performance 1M, %') return s.perf_1m || 0;
-      if (colorBy === 'Performance 3M, %') return s.perf_3m || 0;
-      if (colorBy === 'Performance 6M, %') return s.perf_6m || 0;
-      if (colorBy === 'Performance YTD, %') return s.perf_ytd || 0;
-      if (colorBy === 'Performance 1Y, %') return s.perf_1y || 0;
-      return 0;
-    };
-
-    const sortedByCap = [...stocks].sort((a: any, b: any) => (b.marketCap || 0) - (a.marketCap || 0));
-    let baseStocks = sortedByCap;
-    if (indexFilter === 'Nifty 50 Index') {
-      baseStocks = sortedByCap.slice(0, 50);
-    } else if (indexFilter === 'Nifty Next 50 Index') {
-      baseStocks = sortedByCap.slice(50, 100);
-    } else if (indexFilter === 'BSE Sensex') {
-      baseStocks = sortedByCap.slice(0, 30);
-    } else if (indexFilter === 'Nifty 500 Index') {
-      baseStocks = sortedByCap.slice(0, 500);
-    } else {
-      baseStocks = sortedByCap; // Entire Market (No slice)
-    }
-
-    if (selectedSector) {
-      baseStocks = baseStocks.filter((s: any) => (s.industry || 'Other') === selectedSector);
-    }
-
-    let filteredStocks = baseStocks
-      .filter((s: any) => getSizeValue(s) > 0)
-      .filter((s: any) => {
-        const color = getPerformanceColor(getColorValue(s), colorBy);
-        return !hiddenColorSteps.includes(color);
-      })
-      .sort((a: any, b: any) => getSizeValue(b) - getSizeValue(a));
-
-    const groups: Record<string, any> = {};
-    if (groupBy === 'No group' || selectedSector) {
-      const gName = selectedSector || 'All';
-      groups[gName] = { name: gName, children: [] };
-    }
-
-    filteredStocks.forEach((stock: any) => {
-      const groupName = (groupBy === 'No group' || selectedSector) ? (selectedSector || 'All') : (stock.industry || 'Other');
-      if (!groups[groupName]) {
-        groups[groupName] = { name: groupName, children: [] };
-      }
-      groups[groupName].children.push({
-        name: stock.ticker,
-        slug: stock.slug,
-        fullName: stock.name,
-        size: getSizeValue(stock),
-        colorValue: getColorValue(stock),
-        peRatio: stock.peRatio,
-        marketCap: stock.marketCap,
-        volume: stock.volume,
-        dayChange: parseDayChange(stock.day_change),
-        inst_accum: stock.inst_accum,
-        perf_1w: stock.perf_1w,
-        perf_1m: stock.perf_1m,
-        perf_3m: stock.perf_3m,
-        perf_6m: stock.perf_6m,
-        perf_1y: stock.perf_1y,
-        perf_ytd: stock.perf_ytd
-      });
+  // Send work to worker whenever inputs change
+  useEffect(() => {
+    if (!stocks || dimensions.width === 0 || dimensions.height === 0) return;
+    setIsComputing(true);
+    workerRef.current?.postMessage({
+      stocks,
+      dimensions,
+      sizeBy,
+      colorBy,
+      groupBy,
+      indexFilter,
+      selectedSector,
+      hiddenColorSteps,
     });
-
-    const hierarchyData = {
-      name: 'root',
-      children: Object.values(groups)
-    };
-
-    const root = hierarchy(hierarchyData)
-      .sum((d: any) => d.size)
-      .sort((a, b) => (b.value || 0) - (a.value || 0));
-
-    const tree = treemap()
-      .size([dimensions.width, dimensions.height])
-      .paddingInner(1) // space between leaf nodes
-      .paddingOuter(1) // gap from sector borders
-      .paddingTop(groupBy === 'No group' ? 1 : 22) // Top gap for sector headers
-      .round(true);
-
-    return tree(root as any);
   }, [stocks, dimensions, sizeBy, colorBy, groupBy, indexFilter, selectedSector, hiddenColorSteps]);
 
   if (isLoading || !stocks) {
@@ -201,7 +142,7 @@ export const MarketHeatmap = () => {
   }
 
   return (
-    <div className="flex-1 w-full flex flex-col h-full bg-canvas text-text-primary overflow-hidden">
+    <div className="flex-1 w-full flex flex-col min-h-full bg-canvas text-text-primary">
       {/* Top Navigation Bar */}
       <header className="flex-none px-4 py-2 flex flex-col gap-3 border-b border-border bg-canvas z-10 shrink-0">
         <h1 className="text-xl font-bold tracking-tight text-text-primary">Stock Heatmap</h1>

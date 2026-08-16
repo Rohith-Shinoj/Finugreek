@@ -43,6 +43,9 @@ class TickPublisher:
 
     def _connect(self):
         try:
+            base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+            os.makedirs(os.path.join(base_dir, "tickdb", "logs"), exist_ok=True)
+            os.makedirs(os.path.join(base_dir, "logs"), exist_ok=True)
             import pykx as kx
             self.kx = kx
             self.conn = kx.SyncQConnection(host=self.host, port=self.port)

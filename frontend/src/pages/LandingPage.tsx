@@ -290,7 +290,8 @@ const ComplexMarketCard = ({ stock }: { stock: any }) => {
   const { data: stockData } = useQuery({ 
     queryKey: ['stockData', slug], 
     queryFn: () => fetchStockData(slug),
-    enabled: !!slug
+    enabled: !!slug,
+    staleTime: Infinity // batch prefetch already seeds this cache key
   });
 
   const ohlcv = stockData?.absolute?.OHLCV || [];
@@ -457,7 +458,8 @@ const CommodityRowCard = ({ stock }: { stock: any }) => {
   const { data: stockData } = useQuery({ 
     queryKey: ['stockData', slug], 
     queryFn: () => fetchStockData(slug),
-    enabled: !!slug
+    enabled: !!slug,
+    staleTime: Infinity // batch prefetch already seeds this cache key
   });
 
   const ohlcv = stockData?.absolute?.OHLCV || [];
@@ -986,7 +988,7 @@ export const LandingPage = () => {
   }, [activeTickerItems, tickerMode]);
 
   return (
-    <div className="bg-canvas flex flex-col">
+    <div className="bg-canvas">
       {/* Ticker Tape Controls */}
       <div className="w-full flex justify-center bg-surface border-b border-border py-1 relative z-10">
         <div className="flex items-center gap-1 bg-canvas rounded-md p-0.5 shadow-inner border border-border/50">

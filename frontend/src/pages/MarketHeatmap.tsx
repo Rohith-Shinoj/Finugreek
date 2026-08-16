@@ -6,7 +6,7 @@ import { useNavigate } from 'react-router-dom';
 import { StockLogo } from '../components/StockLogo';
 // Vite native worker import — compiled separately and loaded on demand
 const createTreemapWorker = () => new Worker(
-  new URL('./treemapWorker.ts', import.meta.url),
+  new URL('../workers/treemapWorker.ts', import.meta.url),
   { type: 'module' }
 );
 

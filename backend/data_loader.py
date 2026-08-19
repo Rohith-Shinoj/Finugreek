@@ -23,7 +23,7 @@ def init_db(target_dir):
     if os.path.exists(temp_db_path):
         os.remove(temp_db_path)
     con = duckdb.connect(temp_db_path)
-    con.execute("PRAGMA memory_limit='1GB'")
+    # con.execute("PRAGMA memory_limit='1GB'")
     con.execute("PRAGMA temp_directory='./duckdb_temp_spill'")
     
     # Load slugs and data from JSONL shards

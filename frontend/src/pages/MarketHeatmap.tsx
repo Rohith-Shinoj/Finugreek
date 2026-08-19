@@ -26,22 +26,22 @@ const parseDayChange = (changeStr: string) => {
 // Strict TradingView Colors Steps
 const getPerformanceColor = (value: number, timeframe: string) => {
   let scaleMultiplier = 1;
-  if (timeframe === 'Performance 1W, %') scaleMultiplier = 3.33; 
-  if (timeframe === 'Performance 1M, %') scaleMultiplier = 6.66; 
+  if (timeframe === 'Performance 1W, %') scaleMultiplier = 3.33;
+  if (timeframe === 'Performance 1M, %') scaleMultiplier = 6.66;
   if (timeframe === 'Performance 3M, %') scaleMultiplier = 10.0; // +/- 30%
   if (timeframe === 'Performance 6M, %') scaleMultiplier = 13.33; // +/- 40%
   if (timeframe === 'Performance YTD, %') scaleMultiplier = 15.0; // +/- 45%
   if (timeframe === 'Performance 1Y, %') scaleMultiplier = 20.0; // +/- 60% 
-  
+
   const v = value / scaleMultiplier;
 
-  if (v <= -3) return '#f23645'; 
-  if (v <= -2) return '#f7525f'; 
-  if (v < -0.25) return '#f77c80'; 
-  if (v >= -0.25 && v <= 0.25) return '#787b86'; 
-  if (v > 0.25 && v <= 2) return '#42bd7f'; 
-  if (v > 2 && v < 3) return '#089950'; 
-  return '#056636'; 
+  if (v <= -3) return '#f23645';
+  if (v <= -2) return '#f7525f';
+  if (v < -0.25) return '#f77c80';
+  if (v >= -0.25 && v <= 0.25) return '#787b86';
+  if (v > 0.25 && v <= 2) return '#42bd7f';
+  if (v > 2 && v < 3) return '#089950';
+  return '#056636';
 };
 
 const formatNumber = (num: number) => {
@@ -58,17 +58,17 @@ export const MarketHeatmap = () => {
   const [groupBy, setGroupBy] = useState('Sector');
   const [selectedSector, setSelectedSector] = useState<string | null>(null);
   const [hiddenColorSteps, setHiddenColorSteps] = useState<string[]>([]);
-  
+
   const scaleMultiplier = useMemo(() => {
-    if (colorBy === 'Performance 1W, %') return 3.33; 
-    if (colorBy === 'Performance 1M, %') return 6.66; 
-    if (colorBy === 'Performance 3M, %') return 10.0; 
-    if (colorBy === 'Performance 6M, %') return 13.33; 
-    if (colorBy === 'Performance YTD, %') return 15.0; 
-    if (colorBy === 'Performance 1Y, %') return 20.0; 
+    if (colorBy === 'Performance 1W, %') return 3.33;
+    if (colorBy === 'Performance 1M, %') return 6.66;
+    if (colorBy === 'Performance 3M, %') return 10.0;
+    if (colorBy === 'Performance 6M, %') return 13.33;
+    if (colorBy === 'Performance YTD, %') return 15.0;
+    if (colorBy === 'Performance 1Y, %') return 20.0;
     return 1.0;
   }, [colorBy]);
-  
+
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
   const containerRef = useRef<HTMLDivElement>(null);
   const [hoveredNode, setHoveredNode] = useState<any>(null);
@@ -146,13 +146,13 @@ export const MarketHeatmap = () => {
       {/* Top Navigation Bar */}
       <header className="flex-none px-4 py-2 flex flex-col gap-3 border-b border-border bg-canvas z-10 shrink-0">
         <h1 className="text-xl font-bold tracking-tight text-text-primary">Stock Heatmap</h1>
-        
+
         <div className="flex items-center gap-4 overflow-x-auto text-sm">
           {/* Index / Context */}
           <div className="flex items-center gap-1.5 bg-surface-hover px-2 py-1 rounded border border-border text-text-primary group cursor-pointer">
             <Flag size={14} className="text-[#089950]" />
-            <select 
-              value={indexFilter} 
+            <select
+              value={indexFilter}
               onChange={e => { setIndexFilter(e.target.value); setSelectedSector(null); }}
               className="bg-transparent focus:outline-none text-text-primary font-semibold cursor-pointer appearance-none outline-none pr-1"
             >
@@ -170,8 +170,8 @@ export const MarketHeatmap = () => {
           {/* Size By */}
           <div className="flex items-center gap-1.5 group cursor-pointer">
             <Maximize size={14} className="text-text-secondary" />
-            <select 
-              value={sizeBy} 
+            <select
+              value={sizeBy}
               onChange={e => setSizeBy(e.target.value)}
               className="bg-transparent focus:outline-none text-text-primary hover:text-text-primary font-semibold cursor-pointer appearance-none outline-none pr-1"
             >
@@ -192,8 +192,8 @@ export const MarketHeatmap = () => {
           {/* Color By */}
           <div className="flex items-center gap-1.5 group cursor-pointer">
             <Grid size={14} className="text-text-secondary" />
-            <select 
-              value={colorBy} 
+            <select
+              value={colorBy}
               onChange={e => setColorBy(e.target.value)}
               className="bg-transparent focus:outline-none text-text-primary hover:text-text-primary font-semibold cursor-pointer appearance-none outline-none pr-1"
             >
@@ -213,8 +213,8 @@ export const MarketHeatmap = () => {
           {/* Group By */}
           <div className="flex items-center gap-1.5 group cursor-pointer">
             <PieChart size={14} className="text-text-secondary" />
-            <select 
-              value={groupBy} 
+            <select
+              value={groupBy}
               onChange={e => setGroupBy(e.target.value)}
               className="bg-transparent focus:outline-none text-text-primary hover:text-text-primary font-semibold cursor-pointer appearance-none outline-none pr-1"
             >
@@ -229,21 +229,21 @@ export const MarketHeatmap = () => {
           {/* Legend Inline */}
           <div className="flex items-center gap-1">
             {[
-              { c: '#f23645', v: -3, p: '< ' }, 
-              { c: '#f7525f', v: -2, p: '' }, 
-              { c: '#f77c80', v: -0.25, p: '' }, 
-              { c: '#787b86', v: 0, p: '' }, 
-              { c: '#42bd7f', v: 0.25, p: '' }, 
-              { c: '#089950', v: 2, p: '' }, 
+              { c: '#f23645', v: -3, p: '< ' },
+              { c: '#f7525f', v: -2, p: '' },
+              { c: '#f77c80', v: -0.25, p: '' },
+              { c: '#787b86', v: 0, p: '' },
+              { c: '#42bd7f', v: 0.25, p: '' },
+              { c: '#089950', v: 2, p: '' },
               { c: '#056636', v: 3, p: '> ' }
-            ].map(({c, v, p}) => {
+            ].map(({ c, v, p }) => {
               const val = v * scaleMultiplier;
               const formatted = v === 0 ? '0' : (Math.abs(val) < 10 ? val.toFixed(1).replace('.0', '') : Math.round(val).toString());
               return (
-                <div 
-                  key={c} 
+                <div
+                  key={c}
                   onClick={() => setHiddenColorSteps(prev => prev.includes(c) ? prev.filter(x => x !== c) : [...prev, c])}
-                  style={{ backgroundColor: c }} 
+                  style={{ backgroundColor: c }}
                   className={`flex items-center justify-center px-2 h-5 rounded cursor-pointer hover:scale-110 transition-transform shadow-sm text-[10px] font-bold text-text-primary ${hiddenColorSteps.includes(c) ? 'opacity-30 scale-90' : 'opacity-100'}`}
                   title={`Toggle scale`}
                 >
@@ -265,7 +265,7 @@ export const MarketHeatmap = () => {
             filtered: {stocks ? stocks.filter((s: any) => (s.marketCap || 0) > 0).length : 0} <br/>
           </div>
         )} */}
-        {rootNode && rootNode.leaves().length === 0 && (
+        {rootNode && (!rootNode.children || rootNode.children.length === 0) && (
           <div className="text-text-primary p-4 font-mono text-sm">
             DEBUG: rootNode has 0 leaves!
           </div>
@@ -275,7 +275,7 @@ export const MarketHeatmap = () => {
             <div key={`sector-${i}`} style={{ position: 'absolute', left: sectorNode.x0, top: sectorNode.y0, width: sectorNode.x1 - sectorNode.x0, height: sectorNode.y1 - sectorNode.y0, pointerEvents: 'none' }}>
               {/* Sector Header */}
               {((groupBy !== 'No group' || selectedSector) && !selectedSector && sectorNode.x1 - sectorNode.x0 > 50 && sectorNode.y1 - sectorNode.y0 > 25) && (
-                <div 
+                <div
                   onClick={() => setSelectedSector((sectorNode.data as any).name)}
                   className="absolute top-0 left-0 h-[22px] flex items-center px-1 text-text-primary/80 hover:text-text-primary font-medium text-[11px] bg-transparent truncate pointer-events-auto cursor-pointer transition-colors"
                 >
@@ -284,14 +284,14 @@ export const MarketHeatmap = () => {
               )}
               {/* Selected Sector Back Button */}
               {selectedSector && (
-                <div 
+                <div
                   onClick={() => setSelectedSector(null)}
                   className="absolute top-0 left-0 h-[22px] flex items-center px-1 text-text-primary hover:text-alpha font-bold text-[11px] bg-transparent truncate pointer-events-auto cursor-pointer transition-colors z-20"
                 >
                   &lt; Back to All Sectors
                 </div>
               )}
-              
+
               {/* Leaves */}
               {sectorNode.children && sectorNode.children.map((leafNode: any, j: number) => {
                 const data = leafNode.data as any;
@@ -303,13 +303,13 @@ export const MarketHeatmap = () => {
                 const relY = leafNode.y0 - sectorNode.y0;
 
                 const color = getPerformanceColor(data.colorValue, colorBy);
-                
+
                 const isTiny = width < 38 || height < 28;
                 const isLarge = width >= 54 && height >= 48;
-                
+
                 const showLogo = isLarge || (isTiny && width >= 18 && height >= 18);
                 const showText = !isTiny;
-                
+
                 // Dynamic font size proportional to cell dimensions
                 const fontSizeName = Math.max(8, Math.min(width * 0.16, height * 0.16, 13));
                 const fontSizeVal = Math.max(8, Math.min(width * 0.14, height * 0.14, 11));
@@ -334,11 +334,11 @@ export const MarketHeatmap = () => {
                   >
                     <div className="flex flex-col items-center justify-center w-full h-full gap-0.5 leading-none">
                       {showLogo && (
-                        <div 
-                          style={{ 
-                            width: isLarge ? Math.min(width * 0.28, height * 0.28, 28) : Math.min(width * 0.5, height * 0.5, 18), 
-                            height: isLarge ? Math.min(width * 0.28, height * 0.28, 28) : Math.min(width * 0.5, height * 0.5, 18) 
-                          }} 
+                        <div
+                          style={{
+                            width: isLarge ? Math.min(width * 0.28, height * 0.28, 28) : Math.min(width * 0.5, height * 0.5, 18),
+                            height: isLarge ? Math.min(width * 0.28, height * 0.28, 28) : Math.min(width * 0.5, height * 0.5, 18)
+                          }}
                           className="rounded-full overflow-hidden bg-white shrink-0 flex items-center justify-center shadow-sm"
                         >
                           <StockLogo ticker={data.name} name={data.fullName} className="w-full h-full object-cover" />
@@ -346,15 +346,15 @@ export const MarketHeatmap = () => {
                       )}
                       {showText && (
                         <div className="flex flex-col items-center justify-center w-full min-w-0 leading-none">
-                          <span 
-                            className="text-text-primary font-semibold truncate w-full text-center leading-tight" 
+                          <span
+                            className="text-text-primary font-semibold truncate w-full text-center leading-tight"
                             style={{ fontSize: fontSizeName }}
                           >
                             {data.name}
                           </span>
                           {height >= 40 && (
-                            <span 
-                              className="text-text-primary font-medium truncate w-full text-center leading-tight" 
+                            <span
+                              className="text-text-primary font-medium truncate w-full text-center leading-tight"
                               style={{ fontSize: fontSizeVal }}
                             >
                               {data.colorValue > 0 ? '+' : ''}{data.colorValue.toFixed(2)}%
@@ -382,7 +382,7 @@ export const MarketHeatmap = () => {
                 <div className="text-text-secondary text-xs truncate max-w-[150px] leading-tight">{hoveredNode.fullName}</div>
               </div>
             </div>
-            
+
             <div className="flex items-center gap-6">
               <div className="flex flex-col">
                 <span className="text-text-primary font-mono font-medium">{formatNumber(hoveredNode.size)}</span>

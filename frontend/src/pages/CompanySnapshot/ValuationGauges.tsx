@@ -13,8 +13,8 @@ export const ValuationGauges = ({ data }: { data: any }) => {
   const currentSlug = data.slug;
 
   const { data: allStocks } = useQuery({
-    queryKey: ['allStocks'],
-    queryFn: fetchAllStocks,
+    queryKey: ['allStocks', 2000],
+    queryFn: () => fetchAllStocks({ limit: 2000 }),
     staleTime: 1000 * 60 * 60,
   });
 

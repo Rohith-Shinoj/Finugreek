@@ -315,7 +315,7 @@ export const MultidimensionalChart = ({
       while (currDate <= today) {
         if (currDate.getDay() !== 0 && currDate.getDay() !== 6) { // Skip weekends
           sortedData.push({
-            time: currDate.getTime() / 1000,
+            time: currDate.toISOString().split('T')[0],
             open: lastData.close,
             high: lastData.close,
             low: lastData.close,
@@ -425,7 +425,12 @@ export const MultidimensionalChart = ({
   useEffect(() => {
     if (!chartContainerRef.current || parsedData.length === 0) return;
 
+    const width = chartContainerRef.current.clientWidth || 300;
+    const height = chartContainerRef.current.clientHeight || 300;
+
     const chart = createChart(chartContainerRef.current, {
+      width,
+      height,
       layout: {
         background: { type: ColorType.Solid, color: 'transparent' },
         textColor: '#94a3b8',
@@ -681,13 +686,20 @@ export const MultidimensionalChart = ({
     smaLine.applyOptions({ visible: false });
     bbwSeries.applyOptions({ visible: false });
 
-    const handleResize = () => {
-      if (chartContainerRef.current) {
-        chart.applyOptions({ width: chartContainerRef.current.clientWidth });
+    const resizeObserver = new ResizeObserver(entries => {
+      if (!entries || !entries.length) return;
+      const { width, height } = entries[0].contentRect;
+      if (width > 0 && height > 0) {
+        chart.applyOptions({ width, height });
       }
-    };
+    });
 
-    window.addEventListener('resize', handleResize);
+    if (chartContainerRef.current) {
+      resizeObserver.observe(chartContainerRef.current);
+    }
+
+    // Auto-fit content on initial setup
+    chart.timeScale().fitContent();
 
     const toolTip = tooltipRef.current;
     chart.subscribeCrosshairMove(param => {
@@ -755,7 +767,7 @@ export const MultidimensionalChart = ({
     });
 
     return () => {
-      window.removeEventListener('resize', handleResize);
+      resizeObserver.disconnect();
       chart.remove();
       chartRef.current = null;
     };

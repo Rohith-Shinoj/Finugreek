@@ -425,12 +425,8 @@ export const MultidimensionalChart = ({
   useEffect(() => {
     if (!chartContainerRef.current || parsedData.length === 0) return;
 
-    const width = chartContainerRef.current.clientWidth || 300;
-    const height = chartContainerRef.current.clientHeight || 300;
-
     const chart = createChart(chartContainerRef.current, {
-      width,
-      height,
+      autoSize: true,
       layout: {
         background: { type: ColorType.Solid, color: 'transparent' },
         textColor: '#94a3b8',
@@ -699,7 +695,11 @@ export const MultidimensionalChart = ({
     }
 
     // Auto-fit content on initial setup
-    chart.timeScale().fitContent();
+    requestAnimationFrame(() => {
+      if (chartRef.current) {
+        chartRef.current.timeScale().fitContent();
+      }
+    });
 
     const toolTip = tooltipRef.current;
     chart.subscribeCrosshairMove(param => {
@@ -1650,9 +1650,9 @@ export const MultidimensionalChart = ({
       </div>
       
       {/* Chart Area */}
-      <div className="flex-1 min-h-0 relative flex">
-        <div className="flex-1 relative">
-          <div ref={chartContainerRef} className="absolute inset-0" />
+      <div className="flex-1 min-h-[450px] relative flex w-full">
+        <div className="flex-1 relative w-full h-full">
+          <div ref={chartContainerRef} className="absolute inset-0 w-full h-full" />
           
           <div 
             ref={tooltipRef} 

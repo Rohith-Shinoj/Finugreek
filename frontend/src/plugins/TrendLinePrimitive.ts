@@ -23,8 +23,11 @@ class TrendLinePaneRenderer implements ISeriesPrimitivePaneRenderer {
     }
 
     draw(target: any) {
-        target.useBitmapCoordinateSpace((scope: any) => {
-            const ctx = scope.context;
+        if (!target || typeof target.useBitmapCoordinateSpace !== 'function') return;
+        try {
+            target.useBitmapCoordinateSpace((scope: any) => {
+                if (!scope || !scope.context) return;
+                const ctx = scope.context;
             
             const visibleRange = this._timeScale.getVisibleLogicalRange();
             if (!visibleRange) return;
@@ -101,7 +104,10 @@ class TrendLinePaneRenderer implements ISeriesPrimitivePaneRenderer {
                     ctx.stroke();
                 }
             });
-        });
+            });
+        } catch (e) {
+            console.error('TrendLinePrimitive draw error:', e);
+        }
     }
 
     zOrder() {

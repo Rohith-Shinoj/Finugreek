@@ -1,10 +1,10 @@
-import spacy
 import re
 
-# Load the spaCy NLP pipeline
+# Load the spaCy NLP pipeline safely with fallback
 try:
+    import spacy
     nlp = spacy.load("en_core_web_sm")
-except OSError:
+except (ImportError, OSError):
     nlp = None
 
 # --- Semantic Dictionaries ---

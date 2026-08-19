@@ -44,7 +44,7 @@ self.onmessage = (e: MessageEvent) => {
 
   const getSizeValue = (s: any): number => {
     if (sizeBy === 'Market Cap') return s.marketCap || 0;
-    if (sizeBy === 'Volume 1D') return s.volume || 0;
+    if (sizeBy === 'Volume 1D') return s.vol_1d || s.volume || 0;
     if (sizeBy === 'Volume 1W') return s.vol_1w || 0;
     if (sizeBy === 'Volume 1M') return s.vol_1m || 0;
     if (sizeBy === 'Price * Volume (Turnover) 1D') return s.turnover_1d || 0;

@@ -104,8 +104,9 @@ def get_db():
         with db_lock:
             if _db_con is None:
                 con = duckdb.connect(":memory:")
-                con.execute("PRAGMA threads=1;")
-                con.execute("PRAGMA memory_limit='1GB';")
+                con.execute("PRAGMA threads=2;")
+                con.execute("PRAGMA memory_limit='3GB';")
+                con.execute("PRAGMA max_temp_directory_size='10GB';")
                 con.execute("SET preserve_insertion_order=false;")
                 con.execute("PRAGMA temp_directory='./duckdb_temp_spill';")
                 con.execute(f"CREATE OR REPLACE VIEW stocks AS SELECT * FROM '{DB_PATH}'")
@@ -394,8 +395,18 @@ def list_stocks(page: int = 1, limit: int = 50, category: str = None, sort_by: s
         with db_lock:
             total_count = con.execute(count_query, params).fetchone()[0]
 
-        # Push JSON extraction into DuckDB SQL — eliminates Python json.loads() per row
+        # Push JSON extraction into DuckDB SQL via CTE — limits rows before JSON parsing
         query = f"""
+            WITH top_stocks AS (
+                SELECT
+                    slug, ticker, name, market_cap_type, market_cap,
+                    pe_ratio, day_change, industry, inst_accum,
+                    volatility_squeeze, rs_rating, absolute_data, relative_data
+                FROM stocks
+                {where_clause}
+                ORDER BY market_cap DESC
+                LIMIT ? OFFSET ?
+            )
             SELECT
                 slug, ticker, name, market_cap_type, market_cap,
                 pe_ratio, day_change, industry, inst_accum,
@@ -407,11 +418,14 @@ def list_stocks(page: int = 1, limit: int = 50, category: str = None, sort_by: s
                 TRY_CAST(json_extract_string(relative_data, '$.price_returns.3m_return') AS DOUBLE) AS perf_3m,
                 TRY_CAST(json_extract_string(relative_data, '$.price_returns.6m_return') AS DOUBLE) AS perf_6m,
                 TRY_CAST(json_extract_string(relative_data, '$.price_returns.1y_return') AS DOUBLE) AS perf_1y,
-                TRY_CAST(json_extract_string(relative_data, '$.price_returns.ytd_return') AS DOUBLE) AS perf_ytd
-            FROM stocks
-            {where_clause}
-            ORDER BY market_cap DESC
-            LIMIT ? OFFSET ?
+                TRY_CAST(json_extract_string(relative_data, '$.price_returns.ytd_return') AS DOUBLE) AS perf_ytd,
+                TRY_CAST(json_extract_string(relative_data, '$.volume_and_turnover.vol_1d') AS DOUBLE) AS vol_1d,
+                TRY_CAST(json_extract_string(relative_data, '$.volume_and_turnover.vol_1w') AS DOUBLE) AS vol_1w,
+                TRY_CAST(json_extract_string(relative_data, '$.volume_and_turnover.vol_1m') AS DOUBLE) AS vol_1m,
+                TRY_CAST(json_extract_string(relative_data, '$.volume_and_turnover.turnover_1d') AS DOUBLE) AS turnover_1d,
+                TRY_CAST(json_extract_string(relative_data, '$.volume_and_turnover.turnover_1w') AS DOUBLE) AS turnover_1w,
+                TRY_CAST(json_extract_string(relative_data, '$.volume_and_turnover.turnover_1m') AS DOUBLE) AS turnover_1m
+            FROM top_stocks
         """
 
         with db_lock:
@@ -439,6 +453,13 @@ def list_stocks(page: int = 1, limit: int = 50, category: str = None, sort_by: s
                 "perf_6m": r[16] or 0.0,
                 "perf_1y": r[17] or 0.0,
                 "perf_ytd": r[18] or 0.0,
+                "vol_1d": r[19] or 0.0,
+                "volume": r[19] or 0.0,
+                "vol_1w": r[20] or 0.0,
+                "vol_1m": r[21] or 0.0,
+                "turnover_1d": r[22] or 0.0,
+                "turnover_1w": r[23] or 0.0,
+                "turnover_1m": r[24] or 0.0,
             })
 
         result_payload = {"data": local_cache, "total": total_count, "page": page, "limit": limit}

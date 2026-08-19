@@ -1355,7 +1355,18 @@ export const MultidimensionalChart = ({
     const cagr = years > 0 ? (Math.pow(endPrice / startPrice, 1 / years) - 1) * 100 : 0;
     setPeriodStats({ change: endPrice - startPrice, percentChange: ((endPrice - startPrice) / startPrice) * 100, cagr });
 
-    chartRef.current.timeScale().setVisibleRange({ from: startRange, to: endRange });
+    try {
+      chartRef.current.timeScale().setVisibleLogicalRange({
+        from: Math.max(0, startIndex - 1),
+        to: parsedData.length + 1
+      });
+    } catch (e) {
+      try {
+        chartRef.current.timeScale().setVisibleRange({ from: startRange, to: endRange });
+      } catch (err) {
+        chartRef.current.timeScale().fitContent();
+      }
+    }
 
   }, [timeframe, customRange, parsedData]);
 

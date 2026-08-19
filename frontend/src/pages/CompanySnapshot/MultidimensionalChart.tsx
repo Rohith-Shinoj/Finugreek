@@ -423,10 +423,13 @@ export const MultidimensionalChart = ({
     return { atr, obv, geometricPatterns, lines, exhaustionMarkers };
   }, [parsedData, niftyData, data?.absolute, showMacroPatterns, patternFilter]);
 
+  // State to hold any initialization errors
+  const [chartError, setChartError] = useState<string | null>(null);
+
   // Main Chart Initialization
   useEffect(() => {
     if (!chartContainerRef.current || parsedData.length === 0) return;
-
+    
     const chart = createChart(chartContainerRef.current, {
       autoSize: true,
       layout: {

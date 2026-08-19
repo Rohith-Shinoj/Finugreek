@@ -277,11 +277,13 @@ export const MultidimensionalChart = ({
   const baseLineRef = useRef<any>(null);
 
   const { parsedData, niftyData, sectorData, baseValue, delistedPadIndex, isDelisted } = useMemo(() => {
+    const ohlcv = data?.absolute?.OHLCV || [];
+    const lastOhlcvPrice = ohlcv.length > 0 ? parseFloat(ohlcv[ohlcv.length - 1].Close || ohlcv[ohlcv.length - 1].close) : 0;
+    
     const livePriceStr = String(data?.absolute?.['live price'] || '');
-    const priceVal = parseFloat(livePriceStr.replace(/[^\d.]/g, '')) || 0;
+    const priceVal = parseFloat(livePriceStr.replace(/[^\d.]/g, '')) || lastOhlcvPrice || 0;
     const isDelisted = priceVal === 0;
 
-    const ohlcv = data?.absolute?.OHLCV || [];
     const rawNifty = data?.benchmark_ohlcv || [];
 
     const sortedData = ([...ohlcv].reverse().map((d: any) => {
@@ -776,8 +778,8 @@ export const MultidimensionalChart = ({
   // Effect to update chart markers and geometric patterns
   useEffect(() => {
     if (!seriesRefs.current.candle) return;
-    let markersToSet: any[] = delistedPadIndex !== -1 ? [{
-      time: parsedData[delistedPadIndex]?.time,
+    let markersToSet: any[] = (delistedPadIndex !== -1 && parsedData[delistedPadIndex]?.time) ? [{
+      time: parsedData[delistedPadIndex].time,
       position: 'aboveBar' as const,
       color: '#ef4444',
       shape: 'arrowDown' as const,

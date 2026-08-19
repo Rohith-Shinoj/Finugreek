@@ -105,7 +105,7 @@ def get_db():
             if _db_con is None:
                 con = duckdb.connect(":memory:")
                 con.execute("PRAGMA threads=2;")
-                con.execute("PRAGMA memory_limit='3GB';")
+                con.execute("PRAGMA memory_limit='4GB';")
                 con.execute("PRAGMA max_temp_directory_size='10GB';")
                 con.execute("SET preserve_insertion_order=false;")
                 con.execute("PRAGMA temp_directory='./duckdb_temp_spill';")
